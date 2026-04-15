@@ -7,24 +7,24 @@ datasource db {
   provider = "sqlite"
 }
 
-model Professor {
-  id        String   @id @default(uuid())
-  nome      String
-  email     String   @unique
-  telefone  String?
-  createdAt DateTime @default(now())
-}
-
 model Sala {
   id         String   @id @default(uuid())
   nome       String
   capacidade Int
+
   descricao  String?
 }
 
-model Aluno {
+model Usuario {
   id        String    @id @default(uuid())
+  cpf       Int       @unique
   nome      String
   telefone  Int
+  funcao    String 
+
+  civil     String?
+  endereco  String?
+  profissao String?
+
   createdAt DateTime  @default(now())
 }
