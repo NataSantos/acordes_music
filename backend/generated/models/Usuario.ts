@@ -20,48 +20,28 @@ export type UsuarioModel = runtime.Types.Result.DefaultSelection<Prisma.$Usuario
 
 export type AggregateUsuario = {
   _count: UsuarioCountAggregateOutputType | null
-  _avg: UsuarioAvgAggregateOutputType | null
-  _sum: UsuarioSumAggregateOutputType | null
   _min: UsuarioMinAggregateOutputType | null
   _max: UsuarioMaxAggregateOutputType | null
 }
 
-export type UsuarioAvgAggregateOutputType = {
-  cpf: number | null
-}
-
-export type UsuarioSumAggregateOutputType = {
-  cpf: number | null
-}
-
 export type UsuarioMinAggregateOutputType = {
   id: string | null
-  cpf: number | null
+  cpf: string | null
   nome: string | null
   telefone: string | null
   email: string | null
   role: $Enums.Role | null
   permissions: string | null
-  civil: string | null
-  endereco: string | null
-  profissao: string | null
-  matricula: string | null
-  createdAt: Date | null
 }
 
 export type UsuarioMaxAggregateOutputType = {
   id: string | null
-  cpf: number | null
+  cpf: string | null
   nome: string | null
   telefone: string | null
   email: string | null
   role: $Enums.Role | null
   permissions: string | null
-  civil: string | null
-  endereco: string | null
-  profissao: string | null
-  matricula: string | null
-  createdAt: Date | null
 }
 
 export type UsuarioCountAggregateOutputType = {
@@ -72,22 +52,9 @@ export type UsuarioCountAggregateOutputType = {
   email: number
   role: number
   permissions: number
-  civil: number
-  endereco: number
-  profissao: number
-  matricula: number
-  createdAt: number
   _all: number
 }
 
-
-export type UsuarioAvgAggregateInputType = {
-  cpf?: true
-}
-
-export type UsuarioSumAggregateInputType = {
-  cpf?: true
-}
 
 export type UsuarioMinAggregateInputType = {
   id?: true
@@ -97,11 +64,6 @@ export type UsuarioMinAggregateInputType = {
   email?: true
   role?: true
   permissions?: true
-  civil?: true
-  endereco?: true
-  profissao?: true
-  matricula?: true
-  createdAt?: true
 }
 
 export type UsuarioMaxAggregateInputType = {
@@ -112,11 +74,6 @@ export type UsuarioMaxAggregateInputType = {
   email?: true
   role?: true
   permissions?: true
-  civil?: true
-  endereco?: true
-  profissao?: true
-  matricula?: true
-  createdAt?: true
 }
 
 export type UsuarioCountAggregateInputType = {
@@ -127,11 +84,6 @@ export type UsuarioCountAggregateInputType = {
   email?: true
   role?: true
   permissions?: true
-  civil?: true
-  endereco?: true
-  profissao?: true
-  matricula?: true
-  createdAt?: true
   _all?: true
 }
 
@@ -173,18 +125,6 @@ export type UsuarioAggregateArgs<ExtArgs extends runtime.Types.Extensions.Intern
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
-   * Select which fields to average
-  **/
-  _avg?: UsuarioAvgAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
-   * Select which fields to sum
-  **/
-  _sum?: UsuarioSumAggregateInputType
-  /**
-   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
-   * 
    * Select which fields to find the minimum value
   **/
   _min?: UsuarioMinAggregateInputType
@@ -215,28 +155,19 @@ export type UsuarioGroupByArgs<ExtArgs extends runtime.Types.Extensions.Internal
   take?: number
   skip?: number
   _count?: UsuarioCountAggregateInputType | true
-  _avg?: UsuarioAvgAggregateInputType
-  _sum?: UsuarioSumAggregateInputType
   _min?: UsuarioMinAggregateInputType
   _max?: UsuarioMaxAggregateInputType
 }
 
 export type UsuarioGroupByOutputType = {
   id: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions: string | null
-  civil: string | null
-  endereco: string | null
-  profissao: string | null
-  matricula: string | null
-  createdAt: Date
   _count: UsuarioCountAggregateOutputType | null
-  _avg: UsuarioAvgAggregateOutputType | null
-  _sum: UsuarioSumAggregateOutputType | null
   _min: UsuarioMinAggregateOutputType | null
   _max: UsuarioMaxAggregateOutputType | null
 }
@@ -261,17 +192,12 @@ export type UsuarioWhereInput = {
   OR?: Prisma.UsuarioWhereInput[]
   NOT?: Prisma.UsuarioWhereInput | Prisma.UsuarioWhereInput[]
   id?: Prisma.StringFilter<"Usuario"> | string
-  cpf?: Prisma.IntFilter<"Usuario"> | number
+  cpf?: Prisma.StringFilter<"Usuario"> | string
   nome?: Prisma.StringFilter<"Usuario"> | string
   telefone?: Prisma.StringFilter<"Usuario"> | string
   email?: Prisma.StringFilter<"Usuario"> | string
   role?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
   permissions?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  civil?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  endereco?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  profissao?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  matricula?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   professor?: Prisma.XOR<Prisma.ProfessorNullableScalarRelationFilter, Prisma.ProfessorWhereInput> | null
   aluno?: Prisma.XOR<Prisma.AlunoNullableScalarRelationFilter, Prisma.AlunoWhereInput> | null
 }
@@ -284,18 +210,13 @@ export type UsuarioOrderByWithRelationInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrderInput | Prisma.SortOrder
-  civil?: Prisma.SortOrderInput | Prisma.SortOrder
-  endereco?: Prisma.SortOrderInput | Prisma.SortOrder
-  profissao?: Prisma.SortOrderInput | Prisma.SortOrder
-  matricula?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   professor?: Prisma.ProfessorOrderByWithRelationInput
   aluno?: Prisma.AlunoOrderByWithRelationInput
 }
 
 export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   id?: string
-  cpf?: number
+  cpf?: string
   email?: string
   AND?: Prisma.UsuarioWhereInput | Prisma.UsuarioWhereInput[]
   OR?: Prisma.UsuarioWhereInput[]
@@ -304,11 +225,6 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   telefone?: Prisma.StringFilter<"Usuario"> | string
   role?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
   permissions?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  civil?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  endereco?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  profissao?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  matricula?: Prisma.StringNullableFilter<"Usuario"> | string | null
-  createdAt?: Prisma.DateTimeFilter<"Usuario"> | Date | string
   professor?: Prisma.XOR<Prisma.ProfessorNullableScalarRelationFilter, Prisma.ProfessorWhereInput> | null
   aluno?: Prisma.XOR<Prisma.AlunoNullableScalarRelationFilter, Prisma.AlunoWhereInput> | null
 }, "id" | "cpf" | "email">
@@ -321,16 +237,9 @@ export type UsuarioOrderByWithAggregationInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrderInput | Prisma.SortOrder
-  civil?: Prisma.SortOrderInput | Prisma.SortOrder
-  endereco?: Prisma.SortOrderInput | Prisma.SortOrder
-  profissao?: Prisma.SortOrderInput | Prisma.SortOrder
-  matricula?: Prisma.SortOrderInput | Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
   _count?: Prisma.UsuarioCountOrderByAggregateInput
-  _avg?: Prisma.UsuarioAvgOrderByAggregateInput
   _max?: Prisma.UsuarioMaxOrderByAggregateInput
   _min?: Prisma.UsuarioMinOrderByAggregateInput
-  _sum?: Prisma.UsuarioSumOrderByAggregateInput
 }
 
 export type UsuarioScalarWhereWithAggregatesInput = {
@@ -338,130 +247,90 @@ export type UsuarioScalarWhereWithAggregatesInput = {
   OR?: Prisma.UsuarioScalarWhereWithAggregatesInput[]
   NOT?: Prisma.UsuarioScalarWhereWithAggregatesInput | Prisma.UsuarioScalarWhereWithAggregatesInput[]
   id?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
-  cpf?: Prisma.IntWithAggregatesFilter<"Usuario"> | number
+  cpf?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   nome?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   telefone?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   email?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   role?: Prisma.EnumRoleWithAggregatesFilter<"Usuario"> | $Enums.Role
   permissions?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
-  civil?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
-  endereco?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
-  profissao?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
-  matricula?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
-  createdAt?: Prisma.DateTimeWithAggregatesFilter<"Usuario"> | Date | string
 }
 
 export type UsuarioCreateInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
   professor?: Prisma.ProfessorCreateNestedOneWithoutUsuarioInput
   aluno?: Prisma.AlunoCreateNestedOneWithoutUsuarioInput
 }
 
 export type UsuarioUncheckedCreateInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
   professor?: Prisma.ProfessorUncheckedCreateNestedOneWithoutUsuarioInput
   aluno?: Prisma.AlunoUncheckedCreateNestedOneWithoutUsuarioInput
 }
 
 export type UsuarioUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   professor?: Prisma.ProfessorUpdateOneWithoutUsuarioNestedInput
   aluno?: Prisma.AlunoUpdateOneWithoutUsuarioNestedInput
 }
 
 export type UsuarioUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   professor?: Prisma.ProfessorUncheckedUpdateOneWithoutUsuarioNestedInput
   aluno?: Prisma.AlunoUncheckedUpdateOneWithoutUsuarioNestedInput
 }
 
 export type UsuarioCreateManyInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
 }
 
 export type UsuarioUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type UsuarioUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
 }
 
 export type UsuarioCountOrderByAggregateInput = {
@@ -472,15 +341,6 @@ export type UsuarioCountOrderByAggregateInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
-  civil?: Prisma.SortOrder
-  endereco?: Prisma.SortOrder
-  profissao?: Prisma.SortOrder
-  matricula?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-}
-
-export type UsuarioAvgOrderByAggregateInput = {
-  cpf?: Prisma.SortOrder
 }
 
 export type UsuarioMaxOrderByAggregateInput = {
@@ -491,11 +351,6 @@ export type UsuarioMaxOrderByAggregateInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
-  civil?: Prisma.SortOrder
-  endereco?: Prisma.SortOrder
-  profissao?: Prisma.SortOrder
-  matricula?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
 }
 
 export type UsuarioMinOrderByAggregateInput = {
@@ -506,15 +361,6 @@ export type UsuarioMinOrderByAggregateInput = {
   email?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
-  civil?: Prisma.SortOrder
-  endereco?: Prisma.SortOrder
-  profissao?: Prisma.SortOrder
-  matricula?: Prisma.SortOrder
-  createdAt?: Prisma.SortOrder
-}
-
-export type UsuarioSumOrderByAggregateInput = {
-  cpf?: Prisma.SortOrder
 }
 
 export type UsuarioScalarRelationFilter = {
@@ -524,10 +370,6 @@ export type UsuarioScalarRelationFilter = {
 
 export type EnumRoleFieldUpdateOperationsInput = {
   set?: $Enums.Role
-}
-
-export type DateTimeFieldUpdateOperationsInput = {
-  set?: Date | string
 }
 
 export type UsuarioCreateNestedOneWithoutProfessorInput = {
@@ -560,33 +402,23 @@ export type UsuarioUpdateOneRequiredWithoutAlunoNestedInput = {
 
 export type UsuarioCreateWithoutProfessorInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
   aluno?: Prisma.AlunoCreateNestedOneWithoutUsuarioInput
 }
 
 export type UsuarioUncheckedCreateWithoutProfessorInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
   aluno?: Prisma.AlunoUncheckedCreateNestedOneWithoutUsuarioInput
 }
 
@@ -608,65 +440,45 @@ export type UsuarioUpdateToOneWithWhereWithoutProfessorInput = {
 
 export type UsuarioUpdateWithoutProfessorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aluno?: Prisma.AlunoUpdateOneWithoutUsuarioNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutProfessorInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   aluno?: Prisma.AlunoUncheckedUpdateOneWithoutUsuarioNestedInput
 }
 
 export type UsuarioCreateWithoutAlunoInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
   professor?: Prisma.ProfessorCreateNestedOneWithoutUsuarioInput
 }
 
 export type UsuarioUncheckedCreateWithoutAlunoInput = {
   id?: string
-  cpf: number
+  cpf: string
   nome: string
   telefone: string
   email: string
   role: $Enums.Role
   permissions?: string | null
-  civil?: string | null
-  endereco?: string | null
-  profissao?: string | null
-  matricula?: string | null
-  createdAt?: Date | string
   professor?: Prisma.ProfessorUncheckedCreateNestedOneWithoutUsuarioInput
 }
 
@@ -688,33 +500,23 @@ export type UsuarioUpdateToOneWithWhereWithoutAlunoInput = {
 
 export type UsuarioUpdateWithoutAlunoInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   professor?: Prisma.ProfessorUpdateOneWithoutUsuarioNestedInput
 }
 
 export type UsuarioUncheckedUpdateWithoutAlunoInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
-  cpf?: Prisma.IntFieldUpdateOperationsInput | number
+  cpf?: Prisma.StringFieldUpdateOperationsInput | string
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
-  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   professor?: Prisma.ProfessorUncheckedUpdateOneWithoutUsuarioNestedInput
 }
 
@@ -728,11 +530,6 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   email?: boolean
   role?: boolean
   permissions?: boolean
-  civil?: boolean
-  endereco?: boolean
-  profissao?: boolean
-  matricula?: boolean
-  createdAt?: boolean
   professor?: boolean | Prisma.Usuario$professorArgs<ExtArgs>
   aluno?: boolean | Prisma.Usuario$alunoArgs<ExtArgs>
 }, ExtArgs["result"]["usuario"]>
@@ -745,11 +542,6 @@ export type UsuarioSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   email?: boolean
   role?: boolean
   permissions?: boolean
-  civil?: boolean
-  endereco?: boolean
-  profissao?: boolean
-  matricula?: boolean
-  createdAt?: boolean
 }, ExtArgs["result"]["usuario"]>
 
 export type UsuarioSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -760,11 +552,6 @@ export type UsuarioSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   email?: boolean
   role?: boolean
   permissions?: boolean
-  civil?: boolean
-  endereco?: boolean
-  profissao?: boolean
-  matricula?: boolean
-  createdAt?: boolean
 }, ExtArgs["result"]["usuario"]>
 
 export type UsuarioSelectScalar = {
@@ -775,14 +562,9 @@ export type UsuarioSelectScalar = {
   email?: boolean
   role?: boolean
   permissions?: boolean
-  civil?: boolean
-  endereco?: boolean
-  profissao?: boolean
-  matricula?: boolean
-  createdAt?: boolean
 }
 
-export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "cpf" | "nome" | "telefone" | "email" | "role" | "permissions" | "civil" | "endereco" | "profissao" | "matricula" | "createdAt", ExtArgs["result"]["usuario"]>
+export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "cpf" | "nome" | "telefone" | "email" | "role" | "permissions", ExtArgs["result"]["usuario"]>
 export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   professor?: boolean | Prisma.Usuario$professorArgs<ExtArgs>
   aluno?: boolean | Prisma.Usuario$alunoArgs<ExtArgs>
@@ -798,17 +580,12 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
-    cpf: number
+    cpf: string
     nome: string
     telefone: string
     email: string
     role: $Enums.Role
     permissions: string | null
-    civil: string | null
-    endereco: string | null
-    profissao: string | null
-    matricula: string | null
-    createdAt: Date
   }, ExtArgs["result"]["usuario"]>
   composites: {}
 }
@@ -1235,17 +1012,12 @@ export interface Prisma__UsuarioClient<T, Null = never, ExtArgs extends runtime.
  */
 export interface UsuarioFieldRefs {
   readonly id: Prisma.FieldRef<"Usuario", 'String'>
-  readonly cpf: Prisma.FieldRef<"Usuario", 'Int'>
+  readonly cpf: Prisma.FieldRef<"Usuario", 'String'>
   readonly nome: Prisma.FieldRef<"Usuario", 'String'>
   readonly telefone: Prisma.FieldRef<"Usuario", 'String'>
   readonly email: Prisma.FieldRef<"Usuario", 'String'>
   readonly role: Prisma.FieldRef<"Usuario", 'Role'>
   readonly permissions: Prisma.FieldRef<"Usuario", 'String'>
-  readonly civil: Prisma.FieldRef<"Usuario", 'String'>
-  readonly endereco: Prisma.FieldRef<"Usuario", 'String'>
-  readonly profissao: Prisma.FieldRef<"Usuario", 'String'>
-  readonly matricula: Prisma.FieldRef<"Usuario", 'String'>
-  readonly createdAt: Prisma.FieldRef<"Usuario", 'DateTime'>
 }
     
 

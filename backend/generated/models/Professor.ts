@@ -28,18 +28,27 @@ export type ProfessorMinAggregateOutputType = {
   id: string | null
   usuarioId: string | null
   createdAt: Date | null
+  civil: string | null
+  endereco: string | null
+  profissao: string | null
 }
 
 export type ProfessorMaxAggregateOutputType = {
   id: string | null
   usuarioId: string | null
   createdAt: Date | null
+  civil: string | null
+  endereco: string | null
+  profissao: string | null
 }
 
 export type ProfessorCountAggregateOutputType = {
   id: number
   usuarioId: number
   createdAt: number
+  civil: number
+  endereco: number
+  profissao: number
   _all: number
 }
 
@@ -48,18 +57,27 @@ export type ProfessorMinAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
+  civil?: true
+  endereco?: true
+  profissao?: true
 }
 
 export type ProfessorMaxAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
+  civil?: true
+  endereco?: true
+  profissao?: true
 }
 
 export type ProfessorCountAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
+  civil?: true
+  endereco?: true
+  profissao?: true
   _all?: true
 }
 
@@ -139,6 +157,9 @@ export type ProfessorGroupByOutputType = {
   id: string
   usuarioId: string
   createdAt: Date
+  civil: string | null
+  endereco: string | null
+  profissao: string | null
   _count: ProfessorCountAggregateOutputType | null
   _min: ProfessorMinAggregateOutputType | null
   _max: ProfessorMaxAggregateOutputType | null
@@ -166,6 +187,9 @@ export type ProfessorWhereInput = {
   id?: Prisma.StringFilter<"Professor"> | string
   usuarioId?: Prisma.StringFilter<"Professor"> | string
   createdAt?: Prisma.DateTimeFilter<"Professor"> | Date | string
+  civil?: Prisma.StringNullableFilter<"Professor"> | string | null
+  endereco?: Prisma.StringNullableFilter<"Professor"> | string | null
+  profissao?: Prisma.StringNullableFilter<"Professor"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }
 
@@ -173,6 +197,9 @@ export type ProfessorOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  civil?: Prisma.SortOrderInput | Prisma.SortOrder
+  endereco?: Prisma.SortOrderInput | Prisma.SortOrder
+  profissao?: Prisma.SortOrderInput | Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
 }
 
@@ -183,6 +210,9 @@ export type ProfessorWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.ProfessorWhereInput[]
   NOT?: Prisma.ProfessorWhereInput | Prisma.ProfessorWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"Professor"> | Date | string
+  civil?: Prisma.StringNullableFilter<"Professor"> | string | null
+  endereco?: Prisma.StringNullableFilter<"Professor"> | string | null
+  profissao?: Prisma.StringNullableFilter<"Professor"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }, "id" | "usuarioId">
 
@@ -190,6 +220,9 @@ export type ProfessorOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  civil?: Prisma.SortOrderInput | Prisma.SortOrder
+  endereco?: Prisma.SortOrderInput | Prisma.SortOrder
+  profissao?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.ProfessorCountOrderByAggregateInput
   _max?: Prisma.ProfessorMaxOrderByAggregateInput
   _min?: Prisma.ProfessorMinOrderByAggregateInput
@@ -202,11 +235,17 @@ export type ProfessorScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Professor"> | string
   usuarioId?: Prisma.StringWithAggregatesFilter<"Professor"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Professor"> | Date | string
+  civil?: Prisma.StringNullableWithAggregatesFilter<"Professor"> | string | null
+  endereco?: Prisma.StringNullableWithAggregatesFilter<"Professor"> | string | null
+  profissao?: Prisma.StringNullableWithAggregatesFilter<"Professor"> | string | null
 }
 
 export type ProfessorCreateInput = {
   id?: string
   createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutProfessorInput
 }
 
@@ -214,11 +253,17 @@ export type ProfessorUncheckedCreateInput = {
   id?: string
   usuarioId: string
   createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
 }
 
 export type ProfessorUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutProfessorNestedInput
 }
 
@@ -226,23 +271,35 @@ export type ProfessorUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ProfessorCreateManyInput = {
   id?: string
   usuarioId: string
   createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
 }
 
 export type ProfessorUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ProfessorUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ProfessorNullableScalarRelationFilter = {
@@ -254,18 +311,27 @@ export type ProfessorCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  civil?: Prisma.SortOrder
+  endereco?: Prisma.SortOrder
+  profissao?: Prisma.SortOrder
 }
 
 export type ProfessorMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  civil?: Prisma.SortOrder
+  endereco?: Prisma.SortOrder
+  profissao?: Prisma.SortOrder
 }
 
 export type ProfessorMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  civil?: Prisma.SortOrder
+  endereco?: Prisma.SortOrder
+  profissao?: Prisma.SortOrder
 }
 
 export type ProfessorCreateNestedOneWithoutUsuarioInput = {
@@ -300,14 +366,24 @@ export type ProfessorUncheckedUpdateOneWithoutUsuarioNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.ProfessorUpdateToOneWithWhereWithoutUsuarioInput, Prisma.ProfessorUpdateWithoutUsuarioInput>, Prisma.ProfessorUncheckedUpdateWithoutUsuarioInput>
 }
 
+export type DateTimeFieldUpdateOperationsInput = {
+  set?: Date | string
+}
+
 export type ProfessorCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
 }
 
 export type ProfessorUncheckedCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
 }
 
 export type ProfessorCreateOrConnectWithoutUsuarioInput = {
@@ -329,11 +405,17 @@ export type ProfessorUpdateToOneWithWhereWithoutUsuarioInput = {
 export type ProfessorUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type ProfessorUncheckedUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -342,6 +424,9 @@ export type ProfessorSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  civil?: boolean
+  endereco?: boolean
+  profissao?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["professor"]>
 
@@ -349,6 +434,9 @@ export type ProfessorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  civil?: boolean
+  endereco?: boolean
+  profissao?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["professor"]>
 
@@ -356,6 +444,9 @@ export type ProfessorSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Ext
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  civil?: boolean
+  endereco?: boolean
+  profissao?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["professor"]>
 
@@ -363,9 +454,12 @@ export type ProfessorSelectScalar = {
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  civil?: boolean
+  endereco?: boolean
+  profissao?: boolean
 }
 
-export type ProfessorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt", ExtArgs["result"]["professor"]>
+export type ProfessorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt" | "civil" | "endereco" | "profissao", ExtArgs["result"]["professor"]>
 export type ProfessorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }
@@ -385,6 +479,9 @@ export type $ProfessorPayload<ExtArgs extends runtime.Types.Extensions.InternalA
     id: string
     usuarioId: string
     createdAt: Date
+    civil: string | null
+    endereco: string | null
+    profissao: string | null
   }, ExtArgs["result"]["professor"]>
   composites: {}
 }
@@ -812,6 +909,9 @@ export interface ProfessorFieldRefs {
   readonly id: Prisma.FieldRef<"Professor", 'String'>
   readonly usuarioId: Prisma.FieldRef<"Professor", 'String'>
   readonly createdAt: Prisma.FieldRef<"Professor", 'DateTime'>
+  readonly civil: Prisma.FieldRef<"Professor", 'String'>
+  readonly endereco: Prisma.FieldRef<"Professor", 'String'>
+  readonly profissao: Prisma.FieldRef<"Professor", 'String'>
 }
     
 

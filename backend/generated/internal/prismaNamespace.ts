@@ -756,12 +756,7 @@ export const UsuarioScalarFieldEnum = {
   telefone: 'telefone',
   email: 'email',
   role: 'role',
-  permissions: 'permissions',
-  civil: 'civil',
-  endereco: 'endereco',
-  profissao: 'profissao',
-  matricula: 'matricula',
-  createdAt: 'createdAt'
+  permissions: 'permissions'
 } as const
 
 export type UsuarioScalarFieldEnum = (typeof UsuarioScalarFieldEnum)[keyof typeof UsuarioScalarFieldEnum]
@@ -770,7 +765,10 @@ export type UsuarioScalarFieldEnum = (typeof UsuarioScalarFieldEnum)[keyof typeo
 export const ProfessorScalarFieldEnum = {
   id: 'id',
   usuarioId: 'usuarioId',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  civil: 'civil',
+  endereco: 'endereco',
+  profissao: 'profissao'
 } as const
 
 export type ProfessorScalarFieldEnum = (typeof ProfessorScalarFieldEnum)[keyof typeof ProfessorScalarFieldEnum]
@@ -779,7 +777,8 @@ export type ProfessorScalarFieldEnum = (typeof ProfessorScalarFieldEnum)[keyof t
 export const AlunoScalarFieldEnum = {
   id: 'id',
   usuarioId: 'usuarioId',
-  createdAt: 'createdAt'
+  createdAt: 'createdAt',
+  matricula: 'matricula'
 } as const
 
 export type AlunoScalarFieldEnum = (typeof AlunoScalarFieldEnum)[keyof typeof AlunoScalarFieldEnum]

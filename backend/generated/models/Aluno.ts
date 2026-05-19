@@ -28,18 +28,21 @@ export type AlunoMinAggregateOutputType = {
   id: string | null
   usuarioId: string | null
   createdAt: Date | null
+  matricula: string | null
 }
 
 export type AlunoMaxAggregateOutputType = {
   id: string | null
   usuarioId: string | null
   createdAt: Date | null
+  matricula: string | null
 }
 
 export type AlunoCountAggregateOutputType = {
   id: number
   usuarioId: number
   createdAt: number
+  matricula: number
   _all: number
 }
 
@@ -48,18 +51,21 @@ export type AlunoMinAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
+  matricula?: true
 }
 
 export type AlunoMaxAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
+  matricula?: true
 }
 
 export type AlunoCountAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
+  matricula?: true
   _all?: true
 }
 
@@ -139,6 +145,7 @@ export type AlunoGroupByOutputType = {
   id: string
   usuarioId: string
   createdAt: Date
+  matricula: string | null
   _count: AlunoCountAggregateOutputType | null
   _min: AlunoMinAggregateOutputType | null
   _max: AlunoMaxAggregateOutputType | null
@@ -166,6 +173,7 @@ export type AlunoWhereInput = {
   id?: Prisma.StringFilter<"Aluno"> | string
   usuarioId?: Prisma.StringFilter<"Aluno"> | string
   createdAt?: Prisma.DateTimeFilter<"Aluno"> | Date | string
+  matricula?: Prisma.StringNullableFilter<"Aluno"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }
 
@@ -173,6 +181,7 @@ export type AlunoOrderByWithRelationInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  matricula?: Prisma.SortOrderInput | Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
 }
 
@@ -183,6 +192,7 @@ export type AlunoWhereUniqueInput = Prisma.AtLeast<{
   OR?: Prisma.AlunoWhereInput[]
   NOT?: Prisma.AlunoWhereInput | Prisma.AlunoWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"Aluno"> | Date | string
+  matricula?: Prisma.StringNullableFilter<"Aluno"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
 }, "id" | "usuarioId">
 
@@ -190,6 +200,7 @@ export type AlunoOrderByWithAggregationInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  matricula?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.AlunoCountOrderByAggregateInput
   _max?: Prisma.AlunoMaxOrderByAggregateInput
   _min?: Prisma.AlunoMinOrderByAggregateInput
@@ -202,11 +213,13 @@ export type AlunoScalarWhereWithAggregatesInput = {
   id?: Prisma.StringWithAggregatesFilter<"Aluno"> | string
   usuarioId?: Prisma.StringWithAggregatesFilter<"Aluno"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Aluno"> | Date | string
+  matricula?: Prisma.StringNullableWithAggregatesFilter<"Aluno"> | string | null
 }
 
 export type AlunoCreateInput = {
   id?: string
   createdAt?: Date | string
+  matricula?: string | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutAlunoInput
 }
 
@@ -214,11 +227,13 @@ export type AlunoUncheckedCreateInput = {
   id?: string
   usuarioId: string
   createdAt?: Date | string
+  matricula?: string | null
 }
 
 export type AlunoUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAlunoNestedInput
 }
 
@@ -226,23 +241,27 @@ export type AlunoUncheckedUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type AlunoCreateManyInput = {
   id?: string
   usuarioId: string
   createdAt?: Date | string
+  matricula?: string | null
 }
 
 export type AlunoUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type AlunoUncheckedUpdateManyInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type AlunoNullableScalarRelationFilter = {
@@ -254,18 +273,21 @@ export type AlunoCountOrderByAggregateInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  matricula?: Prisma.SortOrder
 }
 
 export type AlunoMaxOrderByAggregateInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  matricula?: Prisma.SortOrder
 }
 
 export type AlunoMinOrderByAggregateInput = {
   id?: Prisma.SortOrder
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
+  matricula?: Prisma.SortOrder
 }
 
 export type AlunoCreateNestedOneWithoutUsuarioInput = {
@@ -303,11 +325,13 @@ export type AlunoUncheckedUpdateOneWithoutUsuarioNestedInput = {
 export type AlunoCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
+  matricula?: string | null
 }
 
 export type AlunoUncheckedCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
+  matricula?: string | null
 }
 
 export type AlunoCreateOrConnectWithoutUsuarioInput = {
@@ -329,11 +353,13 @@ export type AlunoUpdateToOneWithWhereWithoutUsuarioInput = {
 export type AlunoUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 export type AlunoUncheckedUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
 
 
@@ -342,6 +368,7 @@ export type AlunoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  matricula?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
@@ -349,6 +376,7 @@ export type AlunoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  matricula?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
@@ -356,6 +384,7 @@ export type AlunoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  matricula?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
@@ -363,9 +392,10 @@ export type AlunoSelectScalar = {
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
+  matricula?: boolean
 }
 
-export type AlunoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt", ExtArgs["result"]["aluno"]>
+export type AlunoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt" | "matricula", ExtArgs["result"]["aluno"]>
 export type AlunoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }
@@ -385,6 +415,7 @@ export type $AlunoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
     id: string
     usuarioId: string
     createdAt: Date
+    matricula: string | null
   }, ExtArgs["result"]["aluno"]>
   composites: {}
 }
@@ -812,6 +843,7 @@ export interface AlunoFieldRefs {
   readonly id: Prisma.FieldRef<"Aluno", 'String'>
   readonly usuarioId: Prisma.FieldRef<"Aluno", 'String'>
   readonly createdAt: Prisma.FieldRef<"Aluno", 'DateTime'>
+  readonly matricula: Prisma.FieldRef<"Aluno", 'String'>
 }
     
 

@@ -23,19 +23,12 @@ enum Role {
 
 model Usuario {
   id         String    @id @default(uuid())
-  cpf        Int       @unique
+  cpf        String       @unique
   nome       String
   telefone   String
   email      String    @unique
   role       Role
   permissions String?
-
-  civil      String?
-  endereco   String?
-  profissao  String?
-  matricula  String?
-
-  createdAt  DateTime  @default(now())
 
   professor  Professor?
   aluno      Aluno?
@@ -46,6 +39,9 @@ model Professor {
   usuarioId String   @unique
   usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
+  civil      String?
+  endereco   String?
+  profissao  String?
 }
 
 model Aluno {
@@ -53,4 +49,5 @@ model Aluno {
   usuarioId String   @unique
   usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
+  matricula  String?
 }
