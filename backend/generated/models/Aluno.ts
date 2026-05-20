@@ -175,6 +175,7 @@ export type AlunoWhereInput = {
   createdAt?: Prisma.DateTimeFilter<"Aluno"> | Date | string
   matricula?: Prisma.StringNullableFilter<"Aluno"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
+  agendamentos?: Prisma.AgendamentoListRelationFilter
 }
 
 export type AlunoOrderByWithRelationInput = {
@@ -183,6 +184,7 @@ export type AlunoOrderByWithRelationInput = {
   createdAt?: Prisma.SortOrder
   matricula?: Prisma.SortOrderInput | Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
+  agendamentos?: Prisma.AgendamentoOrderByRelationAggregateInput
 }
 
 export type AlunoWhereUniqueInput = Prisma.AtLeast<{
@@ -194,6 +196,7 @@ export type AlunoWhereUniqueInput = Prisma.AtLeast<{
   createdAt?: Prisma.DateTimeFilter<"Aluno"> | Date | string
   matricula?: Prisma.StringNullableFilter<"Aluno"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
+  agendamentos?: Prisma.AgendamentoListRelationFilter
 }, "id" | "usuarioId">
 
 export type AlunoOrderByWithAggregationInput = {
@@ -221,6 +224,7 @@ export type AlunoCreateInput = {
   createdAt?: Date | string
   matricula?: string | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutAlunoInput
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUncheckedCreateInput = {
@@ -228,6 +232,7 @@ export type AlunoUncheckedCreateInput = {
   usuarioId: string
   createdAt?: Date | string
   matricula?: string | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUpdateInput = {
@@ -235,6 +240,7 @@ export type AlunoUpdateInput = {
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAlunoNestedInput
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoUncheckedUpdateInput = {
@@ -242,6 +248,7 @@ export type AlunoUncheckedUpdateInput = {
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoCreateManyInput = {
@@ -290,6 +297,11 @@ export type AlunoMinOrderByAggregateInput = {
   matricula?: Prisma.SortOrder
 }
 
+export type AlunoScalarRelationFilter = {
+  is?: Prisma.AlunoWhereInput
+  isNot?: Prisma.AlunoWhereInput
+}
+
 export type AlunoCreateNestedOneWithoutUsuarioInput = {
   create?: Prisma.XOR<Prisma.AlunoCreateWithoutUsuarioInput, Prisma.AlunoUncheckedCreateWithoutUsuarioInput>
   connectOrCreate?: Prisma.AlunoCreateOrConnectWithoutUsuarioInput
@@ -322,16 +334,32 @@ export type AlunoUncheckedUpdateOneWithoutUsuarioNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AlunoUpdateToOneWithWhereWithoutUsuarioInput, Prisma.AlunoUpdateWithoutUsuarioInput>, Prisma.AlunoUncheckedUpdateWithoutUsuarioInput>
 }
 
+export type AlunoCreateNestedOneWithoutAgendamentosInput = {
+  create?: Prisma.XOR<Prisma.AlunoCreateWithoutAgendamentosInput, Prisma.AlunoUncheckedCreateWithoutAgendamentosInput>
+  connectOrCreate?: Prisma.AlunoCreateOrConnectWithoutAgendamentosInput
+  connect?: Prisma.AlunoWhereUniqueInput
+}
+
+export type AlunoUpdateOneRequiredWithoutAgendamentosNestedInput = {
+  create?: Prisma.XOR<Prisma.AlunoCreateWithoutAgendamentosInput, Prisma.AlunoUncheckedCreateWithoutAgendamentosInput>
+  connectOrCreate?: Prisma.AlunoCreateOrConnectWithoutAgendamentosInput
+  upsert?: Prisma.AlunoUpsertWithoutAgendamentosInput
+  connect?: Prisma.AlunoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AlunoUpdateToOneWithWhereWithoutAgendamentosInput, Prisma.AlunoUpdateWithoutAgendamentosInput>, Prisma.AlunoUncheckedUpdateWithoutAgendamentosInput>
+}
+
 export type AlunoCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
   matricula?: string | null
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUncheckedCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
   matricula?: string | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoCreateOrConnectWithoutUsuarioInput = {
@@ -354,14 +382,89 @@ export type AlunoUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoUncheckedUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutAlunoNestedInput
 }
 
+export type AlunoCreateWithoutAgendamentosInput = {
+  id?: string
+  createdAt?: Date | string
+  matricula?: string | null
+  usuario: Prisma.UsuarioCreateNestedOneWithoutAlunoInput
+}
+
+export type AlunoUncheckedCreateWithoutAgendamentosInput = {
+  id?: string
+  usuarioId: string
+  createdAt?: Date | string
+  matricula?: string | null
+}
+
+export type AlunoCreateOrConnectWithoutAgendamentosInput = {
+  where: Prisma.AlunoWhereUniqueInput
+  create: Prisma.XOR<Prisma.AlunoCreateWithoutAgendamentosInput, Prisma.AlunoUncheckedCreateWithoutAgendamentosInput>
+}
+
+export type AlunoUpsertWithoutAgendamentosInput = {
+  update: Prisma.XOR<Prisma.AlunoUpdateWithoutAgendamentosInput, Prisma.AlunoUncheckedUpdateWithoutAgendamentosInput>
+  create: Prisma.XOR<Prisma.AlunoCreateWithoutAgendamentosInput, Prisma.AlunoUncheckedCreateWithoutAgendamentosInput>
+  where?: Prisma.AlunoWhereInput
+}
+
+export type AlunoUpdateToOneWithWhereWithoutAgendamentosInput = {
+  where?: Prisma.AlunoWhereInput
+  data: Prisma.XOR<Prisma.AlunoUpdateWithoutAgendamentosInput, Prisma.AlunoUncheckedUpdateWithoutAgendamentosInput>
+}
+
+export type AlunoUpdateWithoutAgendamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAlunoNestedInput
+}
+
+export type AlunoUncheckedUpdateWithoutAgendamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+
+/**
+ * Count Type AlunoCountOutputType
+ */
+
+export type AlunoCountOutputType = {
+  agendamentos: number
+}
+
+export type AlunoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  agendamentos?: boolean | AlunoCountOutputTypeCountAgendamentosArgs
+}
+
+/**
+ * AlunoCountOutputType without action
+ */
+export type AlunoCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the AlunoCountOutputType
+   */
+  select?: Prisma.AlunoCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * AlunoCountOutputType without action
+ */
+export type AlunoCountOutputTypeCountAgendamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgendamentoWhereInput
+}
 
 
 export type AlunoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -370,6 +473,8 @@ export type AlunoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = 
   createdAt?: boolean
   matricula?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
+  agendamentos?: boolean | Prisma.Aluno$agendamentosArgs<ExtArgs>
+  _count?: boolean | Prisma.AlunoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
 export type AlunoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -398,6 +503,8 @@ export type AlunoSelectScalar = {
 export type AlunoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt" | "matricula", ExtArgs["result"]["aluno"]>
 export type AlunoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
+  agendamentos?: boolean | Prisma.Aluno$agendamentosArgs<ExtArgs>
+  _count?: boolean | Prisma.AlunoCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AlunoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
@@ -410,6 +517,7 @@ export type $AlunoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   name: "Aluno"
   objects: {
     usuario: Prisma.$UsuarioPayload<ExtArgs>
+    agendamentos: Prisma.$AgendamentoPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -811,6 +919,7 @@ readonly fields: AlunoFieldRefs;
 export interface Prisma__AlunoClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   usuario<T extends Prisma.UsuarioDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UsuarioDefaultArgs<ExtArgs>>): Prisma.Prisma__UsuarioClient<runtime.Types.Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  agendamentos<T extends Prisma.Aluno$agendamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Aluno$agendamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgendamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1240,6 +1349,30 @@ export type AlunoDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Interna
    * Limit how many Alunos to delete.
    */
   limit?: number
+}
+
+/**
+ * Aluno.agendamentos
+ */
+export type Aluno$agendamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Agendamento
+   */
+  select?: Prisma.AgendamentoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Agendamento
+   */
+  omit?: Prisma.AgendamentoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgendamentoInclude<ExtArgs> | null
+  where?: Prisma.AgendamentoWhereInput
+  orderBy?: Prisma.AgendamentoOrderByWithRelationInput | Prisma.AgendamentoOrderByWithRelationInput[]
+  cursor?: Prisma.AgendamentoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgendamentoScalarFieldEnum | Prisma.AgendamentoScalarFieldEnum[]
 }
 
 /**

@@ -37,3 +37,8 @@ export type Professor = Prisma.ProfessorModel
  * 
  */
 export type Aluno = Prisma.AlunoModel
+/**
+ * Model Agendamento
+ * 
+ */
+export type Agendamento = Prisma.AgendamentoModel

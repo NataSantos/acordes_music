@@ -13,6 +13,8 @@ model Sala {
   capacidade Int
 
   descricao  String?
+
+  agendamentos Agendamento[]
 }
 
 enum Role {
@@ -42,6 +44,8 @@ model Professor {
   civil      String?
   endereco   String?
   profissao  String?
+
+  agendamentos Agendamento[]
 }
 
 model Aluno {
@@ -50,4 +54,29 @@ model Aluno {
   usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
   matricula  String?
+
+  agendamentos Agendamento[]
+}
+
+enum AgendamentoStatus {
+  AGENDADO
+  CONCLUIDO
+}
+
+model Agendamento {
+  id         String            @id @default(uuid())
+  professorId String
+  alunoId    String
+  salaId     String
+  data       DateTime
+  horario    String
+  duracao    Int
+  status     AgendamentoStatus @default(AGENDADO)
+  observacao String?
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  professor Professor @relation(fields: [professorId], references: [id])
+  aluno     Aluno     @relation(fields: [alunoId], references: [id])
+  sala      Sala      @relation(fields: [salaId], references: [id])
 }

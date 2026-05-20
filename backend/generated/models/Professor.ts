@@ -191,6 +191,7 @@ export type ProfessorWhereInput = {
   endereco?: Prisma.StringNullableFilter<"Professor"> | string | null
   profissao?: Prisma.StringNullableFilter<"Professor"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
+  agendamentos?: Prisma.AgendamentoListRelationFilter
 }
 
 export type ProfessorOrderByWithRelationInput = {
@@ -201,6 +202,7 @@ export type ProfessorOrderByWithRelationInput = {
   endereco?: Prisma.SortOrderInput | Prisma.SortOrder
   profissao?: Prisma.SortOrderInput | Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
+  agendamentos?: Prisma.AgendamentoOrderByRelationAggregateInput
 }
 
 export type ProfessorWhereUniqueInput = Prisma.AtLeast<{
@@ -214,6 +216,7 @@ export type ProfessorWhereUniqueInput = Prisma.AtLeast<{
   endereco?: Prisma.StringNullableFilter<"Professor"> | string | null
   profissao?: Prisma.StringNullableFilter<"Professor"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
+  agendamentos?: Prisma.AgendamentoListRelationFilter
 }, "id" | "usuarioId">
 
 export type ProfessorOrderByWithAggregationInput = {
@@ -247,6 +250,7 @@ export type ProfessorCreateInput = {
   endereco?: string | null
   profissao?: string | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutProfessorInput
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUncheckedCreateInput = {
@@ -256,6 +260,7 @@ export type ProfessorUncheckedCreateInput = {
   civil?: string | null
   endereco?: string | null
   profissao?: string | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUpdateInput = {
@@ -265,6 +270,7 @@ export type ProfessorUpdateInput = {
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutProfessorNestedInput
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorUncheckedUpdateInput = {
@@ -274,6 +280,7 @@ export type ProfessorUncheckedUpdateInput = {
   civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorCreateManyInput = {
@@ -334,6 +341,11 @@ export type ProfessorMinOrderByAggregateInput = {
   profissao?: Prisma.SortOrder
 }
 
+export type ProfessorScalarRelationFilter = {
+  is?: Prisma.ProfessorWhereInput
+  isNot?: Prisma.ProfessorWhereInput
+}
+
 export type ProfessorCreateNestedOneWithoutUsuarioInput = {
   create?: Prisma.XOR<Prisma.ProfessorCreateWithoutUsuarioInput, Prisma.ProfessorUncheckedCreateWithoutUsuarioInput>
   connectOrCreate?: Prisma.ProfessorCreateOrConnectWithoutUsuarioInput
@@ -370,12 +382,27 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type ProfessorCreateNestedOneWithoutAgendamentosInput = {
+  create?: Prisma.XOR<Prisma.ProfessorCreateWithoutAgendamentosInput, Prisma.ProfessorUncheckedCreateWithoutAgendamentosInput>
+  connectOrCreate?: Prisma.ProfessorCreateOrConnectWithoutAgendamentosInput
+  connect?: Prisma.ProfessorWhereUniqueInput
+}
+
+export type ProfessorUpdateOneRequiredWithoutAgendamentosNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfessorCreateWithoutAgendamentosInput, Prisma.ProfessorUncheckedCreateWithoutAgendamentosInput>
+  connectOrCreate?: Prisma.ProfessorCreateOrConnectWithoutAgendamentosInput
+  upsert?: Prisma.ProfessorUpsertWithoutAgendamentosInput
+  connect?: Prisma.ProfessorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfessorUpdateToOneWithWhereWithoutAgendamentosInput, Prisma.ProfessorUpdateWithoutAgendamentosInput>, Prisma.ProfessorUncheckedUpdateWithoutAgendamentosInput>
+}
+
 export type ProfessorCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
   civil?: string | null
   endereco?: string | null
   profissao?: string | null
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUncheckedCreateWithoutUsuarioInput = {
@@ -384,6 +411,7 @@ export type ProfessorUncheckedCreateWithoutUsuarioInput = {
   civil?: string | null
   endereco?: string | null
   profissao?: string | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorCreateOrConnectWithoutUsuarioInput = {
@@ -408,6 +436,7 @@ export type ProfessorUpdateWithoutUsuarioInput = {
   civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorUncheckedUpdateWithoutUsuarioInput = {
@@ -416,8 +445,90 @@ export type ProfessorUncheckedUpdateWithoutUsuarioInput = {
   civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutProfessorNestedInput
 }
 
+export type ProfessorCreateWithoutAgendamentosInput = {
+  id?: string
+  createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
+  usuario: Prisma.UsuarioCreateNestedOneWithoutProfessorInput
+}
+
+export type ProfessorUncheckedCreateWithoutAgendamentosInput = {
+  id?: string
+  usuarioId: string
+  createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
+}
+
+export type ProfessorCreateOrConnectWithoutAgendamentosInput = {
+  where: Prisma.ProfessorWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProfessorCreateWithoutAgendamentosInput, Prisma.ProfessorUncheckedCreateWithoutAgendamentosInput>
+}
+
+export type ProfessorUpsertWithoutAgendamentosInput = {
+  update: Prisma.XOR<Prisma.ProfessorUpdateWithoutAgendamentosInput, Prisma.ProfessorUncheckedUpdateWithoutAgendamentosInput>
+  create: Prisma.XOR<Prisma.ProfessorCreateWithoutAgendamentosInput, Prisma.ProfessorUncheckedCreateWithoutAgendamentosInput>
+  where?: Prisma.ProfessorWhereInput
+}
+
+export type ProfessorUpdateToOneWithWhereWithoutAgendamentosInput = {
+  where?: Prisma.ProfessorWhereInput
+  data: Prisma.XOR<Prisma.ProfessorUpdateWithoutAgendamentosInput, Prisma.ProfessorUncheckedUpdateWithoutAgendamentosInput>
+}
+
+export type ProfessorUpdateWithoutAgendamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usuario?: Prisma.UsuarioUpdateOneRequiredWithoutProfessorNestedInput
+}
+
+export type ProfessorUncheckedUpdateWithoutAgendamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+
+/**
+ * Count Type ProfessorCountOutputType
+ */
+
+export type ProfessorCountOutputType = {
+  agendamentos: number
+}
+
+export type ProfessorCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  agendamentos?: boolean | ProfessorCountOutputTypeCountAgendamentosArgs
+}
+
+/**
+ * ProfessorCountOutputType without action
+ */
+export type ProfessorCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the ProfessorCountOutputType
+   */
+  select?: Prisma.ProfessorCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * ProfessorCountOutputType without action
+ */
+export type ProfessorCountOutputTypeCountAgendamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgendamentoWhereInput
+}
 
 
 export type ProfessorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -428,6 +539,8 @@ export type ProfessorSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   endereco?: boolean
   profissao?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
+  agendamentos?: boolean | Prisma.Professor$agendamentosArgs<ExtArgs>
+  _count?: boolean | Prisma.ProfessorCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["professor"]>
 
 export type ProfessorSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -462,6 +575,8 @@ export type ProfessorSelectScalar = {
 export type ProfessorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt" | "civil" | "endereco" | "profissao", ExtArgs["result"]["professor"]>
 export type ProfessorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
+  agendamentos?: boolean | Prisma.Professor$agendamentosArgs<ExtArgs>
+  _count?: boolean | Prisma.ProfessorCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProfessorIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
@@ -474,6 +589,7 @@ export type $ProfessorPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   name: "Professor"
   objects: {
     usuario: Prisma.$UsuarioPayload<ExtArgs>
+    agendamentos: Prisma.$AgendamentoPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -877,6 +993,7 @@ readonly fields: ProfessorFieldRefs;
 export interface Prisma__ProfessorClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
   usuario<T extends Prisma.UsuarioDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UsuarioDefaultArgs<ExtArgs>>): Prisma.Prisma__UsuarioClient<runtime.Types.Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
+  agendamentos<T extends Prisma.Professor$agendamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Professor$agendamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgendamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1308,6 +1425,30 @@ export type ProfessorDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Int
    * Limit how many Professors to delete.
    */
   limit?: number
+}
+
+/**
+ * Professor.agendamentos
+ */
+export type Professor$agendamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Agendamento
+   */
+  select?: Prisma.AgendamentoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Agendamento
+   */
+  omit?: Prisma.AgendamentoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgendamentoInclude<ExtArgs> | null
+  where?: Prisma.AgendamentoWhereInput
+  orderBy?: Prisma.AgendamentoOrderByWithRelationInput | Prisma.AgendamentoOrderByWithRelationInput[]
+  cursor?: Prisma.AgendamentoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgendamentoScalarFieldEnum | Prisma.AgendamentoScalarFieldEnum[]
 }
 
 /**

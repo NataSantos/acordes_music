@@ -150,6 +150,23 @@ export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
 }
 
+export type EnumAgendamentoStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel> | $Enums.AgendamentoStatus
+}
+
+export type EnumAgendamentoStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel> | $Enums.AgendamentoStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+}
+
 export type NestedStringFilter<$PrismaModel = never> = {
   equals?: string | Prisma.StringFieldRefInput<$PrismaModel>
   in?: string[]
@@ -301,6 +318,23 @@ export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _count?: Prisma.NestedIntFilter<$PrismaModel>
   _min?: Prisma.NestedDateTimeFilter<$PrismaModel>
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
+}
+
+export type NestedEnumAgendamentoStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel> | $Enums.AgendamentoStatus
+}
+
+export type NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel> | $Enums.AgendamentoStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
 }
 
 

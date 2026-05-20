@@ -7,6 +7,7 @@ import SalaController from "./controllers/SalaController.js";
 import UsuarioController from "./controllers/UsuarioController.js";
 import ProfessorController from "./controllers/ProfessorController.js";
 import AlunoController from "./controllers/AlunoController.js";
+import AgendamentoController from "./controllers/AgendamentoController.js";
 
 const app = express();
 const prisma = new PrismaClient({
@@ -27,6 +28,7 @@ app.use("/api/salas", SalaController(prisma));
 app.use("/api/usuarios", UsuarioController(prisma));
 app.use("/api/professores", ProfessorController(prisma));
 app.use("/api/alunos", AlunoController(prisma));
+app.use("/api/agendamentos", AgendamentoController(prisma));
 
 async function main() {
   try {

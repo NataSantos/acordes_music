@@ -54,7 +54,8 @@ export const ModelName = {
   Sala: 'Sala',
   Usuario: 'Usuario',
   Professor: 'Professor',
-  Aluno: 'Aluno'
+  Aluno: 'Aluno',
+  Agendamento: 'Agendamento'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -113,6 +114,23 @@ export const AlunoScalarFieldEnum = {
 } as const
 
 export type AlunoScalarFieldEnum = (typeof AlunoScalarFieldEnum)[keyof typeof AlunoScalarFieldEnum]
+
+
+export const AgendamentoScalarFieldEnum = {
+  id: 'id',
+  professorId: 'professorId',
+  alunoId: 'alunoId',
+  salaId: 'salaId',
+  data: 'data',
+  horario: 'horario',
+  duracao: 'duracao',
+  status: 'status',
+  observacao: 'observacao',
+  createdAt: 'createdAt',
+  updatedAt: 'updatedAt'
+} as const
+
+export type AgendamentoScalarFieldEnum = (typeof AgendamentoScalarFieldEnum)[keyof typeof AgendamentoScalarFieldEnum]
 
 
 export const SortOrder = {

@@ -208,6 +208,7 @@ export type SalaWhereInput = {
   nome?: Prisma.StringFilter<"Sala"> | string
   capacidade?: Prisma.IntFilter<"Sala"> | number
   descricao?: Prisma.StringNullableFilter<"Sala"> | string | null
+  agendamentos?: Prisma.AgendamentoListRelationFilter
 }
 
 export type SalaOrderByWithRelationInput = {
@@ -215,6 +216,7 @@ export type SalaOrderByWithRelationInput = {
   nome?: Prisma.SortOrder
   capacidade?: Prisma.SortOrder
   descricao?: Prisma.SortOrderInput | Prisma.SortOrder
+  agendamentos?: Prisma.AgendamentoOrderByRelationAggregateInput
 }
 
 export type SalaWhereUniqueInput = Prisma.AtLeast<{
@@ -225,6 +227,7 @@ export type SalaWhereUniqueInput = Prisma.AtLeast<{
   nome?: Prisma.StringFilter<"Sala"> | string
   capacidade?: Prisma.IntFilter<"Sala"> | number
   descricao?: Prisma.StringNullableFilter<"Sala"> | string | null
+  agendamentos?: Prisma.AgendamentoListRelationFilter
 }, "id">
 
 export type SalaOrderByWithAggregationInput = {
@@ -254,6 +257,7 @@ export type SalaCreateInput = {
   nome: string
   capacidade: number
   descricao?: string | null
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutSalaInput
 }
 
 export type SalaUncheckedCreateInput = {
@@ -261,6 +265,7 @@ export type SalaUncheckedCreateInput = {
   nome: string
   capacidade: number
   descricao?: string | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutSalaInput
 }
 
 export type SalaUpdateInput = {
@@ -268,6 +273,7 @@ export type SalaUpdateInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   capacidade?: Prisma.IntFieldUpdateOperationsInput | number
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutSalaNestedInput
 }
 
 export type SalaUncheckedUpdateInput = {
@@ -275,6 +281,7 @@ export type SalaUncheckedUpdateInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   capacidade?: Prisma.IntFieldUpdateOperationsInput | number
   descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutSalaNestedInput
 }
 
 export type SalaCreateManyInput = {
@@ -327,6 +334,11 @@ export type SalaSumOrderByAggregateInput = {
   capacidade?: Prisma.SortOrder
 }
 
+export type SalaScalarRelationFilter = {
+  is?: Prisma.SalaWhereInput
+  isNot?: Prisma.SalaWhereInput
+}
+
 export type StringFieldUpdateOperationsInput = {
   set?: string
 }
@@ -343,6 +355,93 @@ export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
 }
 
+export type SalaCreateNestedOneWithoutAgendamentosInput = {
+  create?: Prisma.XOR<Prisma.SalaCreateWithoutAgendamentosInput, Prisma.SalaUncheckedCreateWithoutAgendamentosInput>
+  connectOrCreate?: Prisma.SalaCreateOrConnectWithoutAgendamentosInput
+  connect?: Prisma.SalaWhereUniqueInput
+}
+
+export type SalaUpdateOneRequiredWithoutAgendamentosNestedInput = {
+  create?: Prisma.XOR<Prisma.SalaCreateWithoutAgendamentosInput, Prisma.SalaUncheckedCreateWithoutAgendamentosInput>
+  connectOrCreate?: Prisma.SalaCreateOrConnectWithoutAgendamentosInput
+  upsert?: Prisma.SalaUpsertWithoutAgendamentosInput
+  connect?: Prisma.SalaWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.SalaUpdateToOneWithWhereWithoutAgendamentosInput, Prisma.SalaUpdateWithoutAgendamentosInput>, Prisma.SalaUncheckedUpdateWithoutAgendamentosInput>
+}
+
+export type SalaCreateWithoutAgendamentosInput = {
+  id?: string
+  nome: string
+  capacidade: number
+  descricao?: string | null
+}
+
+export type SalaUncheckedCreateWithoutAgendamentosInput = {
+  id?: string
+  nome: string
+  capacidade: number
+  descricao?: string | null
+}
+
+export type SalaCreateOrConnectWithoutAgendamentosInput = {
+  where: Prisma.SalaWhereUniqueInput
+  create: Prisma.XOR<Prisma.SalaCreateWithoutAgendamentosInput, Prisma.SalaUncheckedCreateWithoutAgendamentosInput>
+}
+
+export type SalaUpsertWithoutAgendamentosInput = {
+  update: Prisma.XOR<Prisma.SalaUpdateWithoutAgendamentosInput, Prisma.SalaUncheckedUpdateWithoutAgendamentosInput>
+  create: Prisma.XOR<Prisma.SalaCreateWithoutAgendamentosInput, Prisma.SalaUncheckedCreateWithoutAgendamentosInput>
+  where?: Prisma.SalaWhereInput
+}
+
+export type SalaUpdateToOneWithWhereWithoutAgendamentosInput = {
+  where?: Prisma.SalaWhereInput
+  data: Prisma.XOR<Prisma.SalaUpdateWithoutAgendamentosInput, Prisma.SalaUncheckedUpdateWithoutAgendamentosInput>
+}
+
+export type SalaUpdateWithoutAgendamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  capacidade?: Prisma.IntFieldUpdateOperationsInput | number
+  descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+export type SalaUncheckedUpdateWithoutAgendamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  nome?: Prisma.StringFieldUpdateOperationsInput | string
+  capacidade?: Prisma.IntFieldUpdateOperationsInput | number
+  descricao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+}
+
+
+/**
+ * Count Type SalaCountOutputType
+ */
+
+export type SalaCountOutputType = {
+  agendamentos: number
+}
+
+export type SalaCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  agendamentos?: boolean | SalaCountOutputTypeCountAgendamentosArgs
+}
+
+/**
+ * SalaCountOutputType without action
+ */
+export type SalaCountOutputTypeDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the SalaCountOutputType
+   */
+  select?: Prisma.SalaCountOutputTypeSelect<ExtArgs> | null
+}
+
+/**
+ * SalaCountOutputType without action
+ */
+export type SalaCountOutputTypeCountAgendamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.AgendamentoWhereInput
+}
 
 
 export type SalaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -350,6 +449,8 @@ export type SalaSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   nome?: boolean
   capacidade?: boolean
   descricao?: boolean
+  agendamentos?: boolean | Prisma.Sala$agendamentosArgs<ExtArgs>
+  _count?: boolean | Prisma.SalaCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["sala"]>
 
 export type SalaSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
@@ -374,10 +475,18 @@ export type SalaSelectScalar = {
 }
 
 export type SalaOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "nome" | "capacidade" | "descricao", ExtArgs["result"]["sala"]>
+export type SalaInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  agendamentos?: boolean | Prisma.Sala$agendamentosArgs<ExtArgs>
+  _count?: boolean | Prisma.SalaCountOutputTypeDefaultArgs<ExtArgs>
+}
+export type SalaIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
+export type SalaIncludeUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {}
 
 export type $SalaPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   name: "Sala"
-  objects: {}
+  objects: {
+    agendamentos: Prisma.$AgendamentoPayload<ExtArgs>[]
+  }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     nome: string
@@ -777,6 +886,7 @@ readonly fields: SalaFieldRefs;
  */
 export interface Prisma__SalaClient<T, Null = never, ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs, GlobalOmitOptions = {}> extends Prisma.PrismaPromise<T> {
   readonly [Symbol.toStringTag]: "PrismaPromise"
+  agendamentos<T extends Prisma.Sala$agendamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Sala$agendamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgendamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -827,6 +937,10 @@ export type SalaFindUniqueArgs<ExtArgs extends runtime.Types.Extensions.Internal
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
+  /**
    * Filter, which Sala to fetch.
    */
   where: Prisma.SalaWhereUniqueInput
@@ -845,6 +959,10 @@ export type SalaFindUniqueOrThrowArgs<ExtArgs extends runtime.Types.Extensions.I
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
+  /**
    * Filter, which Sala to fetch.
    */
   where: Prisma.SalaWhereUniqueInput
@@ -862,6 +980,10 @@ export type SalaFindFirstArgs<ExtArgs extends runtime.Types.Extensions.InternalA
    * Omit specific fields from the Sala
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
   /**
    * Filter, which Sala to fetch.
    */
@@ -911,6 +1033,10 @@ export type SalaFindFirstOrThrowArgs<ExtArgs extends runtime.Types.Extensions.In
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
+  /**
    * Filter, which Sala to fetch.
    */
   where?: Prisma.SalaWhereInput
@@ -958,6 +1084,10 @@ export type SalaFindManyArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
    * Omit specific fields from the Sala
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
   /**
    * Filter, which Salas to fetch.
    */
@@ -1007,6 +1137,10 @@ export type SalaCreateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
+  /**
    * The data needed to create a Sala.
    */
   data: Prisma.XOR<Prisma.SalaCreateInput, Prisma.SalaUncheckedCreateInput>
@@ -1052,6 +1186,10 @@ export type SalaUpdateArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    * Omit specific fields from the Sala
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
   /**
    * The data needed to update a Sala.
    */
@@ -1119,6 +1257,10 @@ export type SalaUpsertArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
+  /**
    * The filter to search for the Sala to update in case it exists.
    */
   where: Prisma.SalaWhereUniqueInput
@@ -1145,6 +1287,10 @@ export type SalaDeleteArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
   /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
+  /**
    * Filter which Sala to delete.
    */
   where: Prisma.SalaWhereUniqueInput
@@ -1165,6 +1311,30 @@ export type SalaDeleteManyArgs<ExtArgs extends runtime.Types.Extensions.Internal
 }
 
 /**
+ * Sala.agendamentos
+ */
+export type Sala$agendamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Agendamento
+   */
+  select?: Prisma.AgendamentoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Agendamento
+   */
+  omit?: Prisma.AgendamentoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.AgendamentoInclude<ExtArgs> | null
+  where?: Prisma.AgendamentoWhereInput
+  orderBy?: Prisma.AgendamentoOrderByWithRelationInput | Prisma.AgendamentoOrderByWithRelationInput[]
+  cursor?: Prisma.AgendamentoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.AgendamentoScalarFieldEnum | Prisma.AgendamentoScalarFieldEnum[]
+}
+
+/**
  * Sala without action
  */
 export type SalaDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -1176,4 +1346,8 @@ export type SalaDefaultArgs<ExtArgs extends runtime.Types.Extensions.InternalArg
    * Omit specific fields from the Sala
    */
   omit?: Prisma.SalaOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.SalaInclude<ExtArgs> | null
 }

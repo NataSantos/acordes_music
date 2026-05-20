@@ -16,3 +16,11 @@ export const Role = {
 } as const
 
 export type Role = (typeof Role)[keyof typeof Role]
+
+
+export const AgendamentoStatus = {
+  AGENDADO: 'AGENDADO',
+  CONCLUIDO: 'CONCLUIDO'
+} as const
+
+export type AgendamentoStatus = (typeof AgendamentoStatus)[keyof typeof AgendamentoStatus]
