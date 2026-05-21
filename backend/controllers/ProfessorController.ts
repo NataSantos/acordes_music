@@ -66,6 +66,10 @@ export default function ProfessorController(prisma: PrismaClient): Router {
   router.delete("/:id", async (req, res) => {
     const { id } = req.params;
     try {
+      const agendamentos = await prisma.agendamento.count({ where: { professorId: id } });
+      if (agendamentos > 0) {
+        return res.status(409).json({ error: "Professor possui agendamentos vinculados. Remova-os antes de excluir." });
+      }
       await prisma.professor.delete({ where: { id } });
       return res.status(204).send();
     } catch (error) {

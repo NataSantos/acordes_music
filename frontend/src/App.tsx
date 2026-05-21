@@ -27,7 +27,13 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 
 type Sala = { id: string; nome: string; capacidade: number; descricao?: string | null };
 type Usuario = { id: string; cpf: string; nome: string; telefone: string; email: string };
@@ -78,11 +84,14 @@ function App() {
   const [agendamentos, setAgendamentos] = useState<Agendamento[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorDialogOpen, setErrorDialogOpen] = useState(false);
   const [conflitos, setConflitos] = useState<string[]>([]);
   const [verificandoConflito, setVerificandoConflito] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("");
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deletingItem, setDeletingItem] = useState<{ id: string; label: string } | null>(null);
   const conflitoReqId = useRef(0);
   const [form, setForm] = useState({
     nome: "", descricao: "", capacidade: "",
@@ -90,6 +99,10 @@ function App() {
     professorId: "", alunoId: "", salaId: "",
     data: "", horario: "", duracao: "60", observacao: "",
   });
+
+  useEffect(() => {
+    if (error) setErrorDialogOpen(true);
+  }, [error]);
 
   useEffect(() => {
     (async () => {
@@ -134,8 +147,8 @@ function App() {
       setForm(p => ({ ...p, nome: s.nome, descricao: s.descricao ?? "", capacidade: String(s.capacidade) }));
       setSection("salas");
     } else if ("profissao" in item) {
-      const p = item as Professor;
-      setForm(p => ({ ...p, nome: p.usuario.nome, cpf: p.usuario.cpf, email: p.usuario.email, telefone: p.usuario.telefone, profissao: p.profissao ?? "" }));
+      const prof = item as Professor;
+      setForm(prev => ({ ...prev, nome: prof.usuario.nome, cpf: prof.usuario.cpf, email: prof.usuario.email, telefone: prof.usuario.telefone, profissao: prof.profissao ?? "" }));
       setSection("professores");
     } else if ("matricula" in item) {
       const a = item as Aluno;
@@ -160,38 +173,45 @@ function App() {
 
   const handleFormField = (field: string, value: string) => {
     setForm(p => ({ ...p, [field]: value }));
-    if (section === "agendamentos" && ["professorId", "alunoId", "salaId", "data", "horario", "duracao"].includes(field)) {
-      verificarConflito({ ...form, [field]: value });
-    }
   };
 
-  const verificarConflito = async (dados: typeof form) => {
-    if (!dados.professorId || !dados.alunoId || !dados.salaId || !dados.data || !dados.horario) {
+  const conflitosRef = useRef(conflitos);
+  useEffect(() => { conflitosRef.current = conflitos; });
+
+  useEffect(() => {
+    if (section !== "agendamentos" || !dialogOpen) {
       setConflitos([]);
       return;
     }
+    const { professorId, alunoId, salaId, data, horario, duracao } = form;
+    if (!professorId || !alunoId || !salaId || !data || !horario) return;
+
     const id = ++conflitoReqId.current;
     setVerificandoConflito(true);
-    try {
-      const params = new URLSearchParams({
-        professorId: dados.professorId,
-        alunoId: dados.alunoId,
-        salaId: dados.salaId,
-        data: dados.data,
-        horario: dados.horario,
-        duracao: dados.duracao || "60",
-        ...(editingId ? { ignorarId: editingId } : {}),
-      });
-      const res = await fetch(`${backendUrl}/api/agendamentos/verificar-conflito?${params}`);
-      if (!res.ok) return;
-      const json = await res.json();
-      if (id === conflitoReqId.current) setConflitos(json.conflitos);
-    } catch {
-      // silence
-    } finally {
-      if (id === conflitoReqId.current) setVerificandoConflito(false);
-    }
-  };
+    setConflitos([]);
+
+    const params = new URLSearchParams({
+      professorId, alunoId, salaId, data, horario,
+      duracao: duracao || "60",
+      ...(editingId ? { ignorarId: editingId } : {}),
+    });
+
+    (async () => {
+      try {
+        const res = await fetch(`${backendUrl}/api/agendamentos/verificar-conflito?${params}`);
+        if (!res.ok) {
+          if (id === conflitoReqId.current) setConflitos(["Erro ao verificar conflitos no servidor"]);
+          return;
+        }
+        const json = await res.json();
+        if (id === conflitoReqId.current) setConflitos(json.conflitos);
+      } catch {
+        if (id === conflitoReqId.current) setConflitos(["Erro de conexão ao verificar conflitos"]);
+      } finally {
+        if (id === conflitoReqId.current) setVerificandoConflito(false);
+      }
+    })();
+  }, [section, dialogOpen, form.professorId, form.alunoId, form.salaId, form.data, form.horario, form.duracao, editingId]);
 
   const refreshData = async () => {
     const fetches: Promise<Response>[] = [];
@@ -261,9 +281,34 @@ function App() {
     }
   };
 
-  const handleDelete = async (id: string) => {
-    await fetch(`${backendUrl}/api/${section}/${id}`, { method: "DELETE" });
-    await refreshData();
+  const getItemLabel = (item: Sala | Professor | Aluno | Agendamento): string => {
+    if ("nome" in item && "capacidade" in item) return (item as Sala).nome;
+    if ("usuario" in item) return (item as Professor | Aluno).usuario.nome;
+    if ("professor" in item) return `Agendamento de ${(item as Agendamento).professor.usuario.nome}`;
+    return "";
+  };
+
+  const openDeleteDialog = (id: string, label: string) => {
+    setDeletingItem({ id, label });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!deletingItem) return;
+    try {
+      const res = await fetch(`${backendUrl}/api/${section}/${deletingItem.id}`, { method: "DELETE" });
+      if (!res.ok) {
+        const data = await res.json().catch(() => null);
+        throw new Error(data?.error || "Erro ao excluir");
+      }
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
+      await refreshData();
+    } catch (err) {
+      setDeleteDialogOpen(false);
+      setDeletingItem(null);
+      setError(err instanceof Error ? err.message : "Erro ao excluir");
+    }
   };
 
   const handleRegistrar = async (id: string) => {
@@ -316,17 +361,29 @@ function App() {
                   <Badge className={statusBadge[a.status]}>{statusLabel[a.status]}</Badge>
                 </TableCell>
                 <TableCell>
-                  <div className="flex gap-1">
-                    <Button variant="outline" size="sm" onClick={() => openEdit(a)}>Editar</Button>
-                    {a.status !== "CONCLUIDO" && (
-                      <Button variant="outline" size="sm" onClick={() => handleRegistrar(a.id)}>
-                        <CheckCircle2 className="size-3.5" />
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="size-8 p-0">
+                        <MoreHorizontal className="size-4" />
                       </Button>
-                    )}
-                    <Button variant="destructive" size="sm" onClick={() => handleDelete(a.id)}>
-                      <Trash2 className="size-3.5" />
-                    </Button>
-                  </div>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(a)}>
+                        <Pencil className="size-3.5" /> Editar
+                      </DropdownMenuItem>
+                      {a.status !== "CONCLUIDO" && (
+                        <DropdownMenuItem onClick={() => handleRegistrar(a.id)}>
+                          <CheckCircle2 className="size-3.5" /> Registrar
+                        </DropdownMenuItem>
+                      )}
+                      <DropdownMenuItem
+                        onClick={() => openDeleteDialog(a.id, `Agendamento de ${a.professor.usuario.nome}`)}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="size-3.5" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </TableCell>
               </TableRow>
             ))}
@@ -362,12 +419,24 @@ function App() {
                 <><TableCell className="font-medium">{(item as Aluno).usuario.nome}</TableCell><TableCell>{(item as Aluno).usuario.email}</TableCell></>
               )}
               <TableCell>
-                <div className="flex gap-1">
-                  <Button variant="outline" size="sm" onClick={() => openEdit(item)}>Editar</Button>
-                  <Button variant="destructive" size="sm" onClick={() => handleDelete(item.id)}>
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="size-8 p-0">
+                      <MoreHorizontal className="size-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem onClick={() => openEdit(item)}>
+                      <Pencil className="size-3.5" /> Editar
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => openDeleteDialog(item.id, getItemLabel(item))}
+                      className="text-destructive"
+                    >
+                      <Trash2 className="size-3.5" /> Excluir
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </TableCell>
             </TableRow>
           ))}
@@ -531,10 +600,6 @@ function App() {
               <Button onClick={openCreate}><Plus className="size-4" /> Novo</Button>
             </CardHeader>
             <CardContent>
-              {error && (
-                <div className="bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700 mb-4">{error}</div>
-              )}
-
               {section === "agendamentos" && (
                 <div className="flex gap-2 mb-4">
                   <Button
@@ -558,6 +623,33 @@ function App() {
           </Card>
         </div>
       </main>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Confirmar exclusão</DialogTitle>
+            <DialogDescription>
+              Tem certeza que deseja excluir {deletingItem?.label}? Esta ação não pode ser desfeita.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
+            <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={errorDialogOpen} onOpenChange={v => { setErrorDialogOpen(v); if (!v) setError(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Erro</DialogTitle>
+            <DialogDescription>{error}</DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="default" onClick={() => { setErrorDialogOpen(false); setError(null); }}>OK</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="sm:max-w-lg">
