@@ -19,6 +19,10 @@ export default function SalaController(prisma: PrismaClient): Router {
   router.post("/", async (req, res) => {
     try {
       const { nome, capacidade, descricao } = req.body;
+      const existente = await prisma.sala.findFirst({ where: { nome } });
+      if (existente) {
+        return res.status(409).json({ error: `Já existe uma sala cadastrada com o nome "${nome}"` });
+      }
       const sala = await prisma.sala.create({
         data: { nome, capacidade: Number(capacidade), descricao },
       });
@@ -32,10 +36,15 @@ export default function SalaController(prisma: PrismaClient): Router {
   router.put("/:id", async (req, res) => {
     const { id } = req.params;
     try {
+      const { nome } = req.body;
+      const existente = await prisma.sala.findFirst({ where: { nome, NOT: { id } } });
+      if (existente) {
+        return res.status(409).json({ error: `Já existe outra sala cadastrada com o nome "${nome}"` });
+      }
       const sala = await prisma.sala.update({
         where: { id },
         data: {
-          nome: req.body.nome,
+          nome,
           capacidade: Number(req.body.capacidade),
           descricao: req.body.descricao,
         },

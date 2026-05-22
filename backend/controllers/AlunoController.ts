@@ -22,6 +22,13 @@ export default function AlunoController(prisma: PrismaClient): Router {
   router.post("/", async (req, res) => {
     try {
       const { cpf, nome, telefone, email, permissions, matricula } = req.body;
+      const existente = await prisma.usuario.findFirst({
+        where: { OR: [{ cpf }, { email }] },
+      });
+      if (existente) {
+        const motivo = existente.cpf === cpf ? "CPF" : "email";
+        return res.status(409).json({ error: `Já existe um aluno cadastrado com este ${motivo}` });
+      }
       const aluno = await prisma.aluno.create({
         data: {
           matricula,
@@ -42,7 +49,22 @@ export default function AlunoController(prisma: PrismaClient): Router {
     const { id } = req.params;
     try {
       const { cpf, nome, telefone, email, permissions, matricula } = req.body;
-      const aluno = await prisma.aluno.update({
+      const aluno = await prisma.aluno.findUnique({
+        where: { id },
+        include: { usuario: true },
+      });
+      if (!aluno) return res.status(404).json(notFound());
+      const existente = await prisma.usuario.findFirst({
+        where: {
+          OR: [{ cpf }, { email }],
+          NOT: { id: aluno.usuarioId },
+        },
+      });
+      if (existente) {
+        const motivo = existente.cpf === cpf ? "CPF" : "email";
+        return res.status(409).json({ error: `Já existe outro aluno cadastrado com este ${motivo}` });
+      }
+      const atualizado = await prisma.aluno.update({
         where: { id },
         data: {
           matricula,
@@ -52,7 +74,7 @@ export default function AlunoController(prisma: PrismaClient): Router {
         },
         include: { usuario: true },
       });
-      return res.json(aluno);
+      return res.json(atualizado);
     } catch (error) {
       console.error("Erro ao atualizar aluno:", error);
       return res.status(404).json(notFound());

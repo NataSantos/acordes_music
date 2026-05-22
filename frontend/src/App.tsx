@@ -29,7 +29,7 @@ import {
 } from "@/components/ui/dialog";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -173,7 +173,17 @@ function App() {
     setDialogOpen(true);
   };
 
+  const capitalize = (str: string) => {
+    return str.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+  };
+
   const handleFormField = (field: string, value: string) => {
+    if (field === "nome" || field === "profissao") {
+      value = capitalize(value);
+    }
+    if (field === "cpf" || field === "telefone") {
+      value = value.replace(/\D/g, "");
+    }
     setForm(p => ({ ...p, [field]: value }));
   };
 
@@ -245,9 +255,27 @@ function App() {
         return;
       }
     }
-    if (section === "salas" && !form.nome) { setError("Preencha o nome da sala"); return; }
-    if ((section === "professores" || section === "alunos") && (!form.nome || !form.cpf || !form.email || !form.telefone)) {
-      setError("Preencha todos os campos obrigatórios"); return;
+    if (section === "salas") {
+      if (!form.nome) { setError("Preencha o nome da sala"); return; }
+      const nomeDuplicado = salas.find(s => s.nome.toLowerCase() === form.nome.toLowerCase() && s.id !== editingId);
+      if (nomeDuplicado) { setError(`Já existe uma sala cadastrada com o nome "${form.nome}"`); return; }
+    }
+    if (section === "professores" || section === "alunos") {
+      if (!form.nome || !form.cpf || !form.email || !form.telefone) {
+        setError("Preencha todos os campos obrigatórios"); return;
+      }
+      const todosUsuarios = [...professores.map(p => p.usuario), ...alunos.map(a => a.usuario)];
+      const usuarioAtualId = section === "professores"
+        ? professores.find(p => p.id === editingId)?.usuario?.id
+        : alunos.find(a => a.id === editingId)?.usuario?.id;
+      const duplicado = todosUsuarios.find(u =>
+        (u.cpf === form.cpf || u.email === form.email) && u.id !== usuarioAtualId
+      );
+      if (duplicado) {
+        const motivo = duplicado.cpf === form.cpf ? "CPF" : "email";
+        const tipo = section === "professores" ? "professor" : "aluno";
+        setError(`Já existe um ${tipo} cadastrado com este ${motivo}`); return;
+      }
     }
 
     try {
@@ -671,10 +699,15 @@ function App() {
       </Dialog>
 
       <Dialog open={errorDialogOpen} onOpenChange={v => { setErrorDialogOpen(v); if (!v) setError(null); }}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Erro</DialogTitle>
-            <DialogDescription>{error}</DialogDescription>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader className="flex flex-row items-start gap-3">
+            <div className="rounded-full bg-destructive/10 p-2 shrink-0 mt-0.5">
+              <AlertTriangle className="size-5 text-destructive" />
+            </div>
+            <div>
+              <DialogTitle className="text-destructive">Erro</DialogTitle>
+              <DialogDescription className="text-sm mt-1 text-foreground/80">{error}</DialogDescription>
+            </div>
           </DialogHeader>
           <DialogFooter>
             <Button variant="default" onClick={() => { setErrorDialogOpen(false); setError(null); }}>OK</Button>
