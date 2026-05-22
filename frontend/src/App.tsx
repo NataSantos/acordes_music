@@ -27,6 +27,8 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil } from "lucide-react";
 import {
   DropdownMenu,
@@ -336,59 +338,88 @@ function App() {
       if (items.length === 0) {
         return <p className="text-muted-foreground text-center py-12">Nenhum agendamento encontrado</p>;
       }
+
+      const grouped = items.reduce<Record<string, typeof items>>((acc, a) => {
+        const key = a.data.slice(0, 10);
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(a);
+        return acc;
+      }, {});
+      const sortedDates = Object.keys(grouped).sort();
+
       return (
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Professor</TableHead>
-              <TableHead>Aluno</TableHead>
-              <TableHead>Sala</TableHead>
-              <TableHead>Data</TableHead>
-              <TableHead>Horário</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-40">Ações</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {items.map(a => (
-              <TableRow key={a.id}>
-                <TableCell className="font-medium">{a.professor.usuario.nome}</TableCell>
-                <TableCell>{a.aluno.usuario.nome}</TableCell>
-                <TableCell>{a.sala.nome}</TableCell>
-                <TableCell>{new Date(a.data).toLocaleDateString("pt-BR")}</TableCell>
-                <TableCell>{a.horario}h ({a.duracao}min)</TableCell>
-                <TableCell>
-                  <Badge className={statusBadge[a.status]}>{statusLabel[a.status]}</Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="size-8 p-0">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(a)}>
-                        <Pencil className="size-3.5" /> Editar
-                      </DropdownMenuItem>
-                      {a.status !== "CONCLUIDO" && (
-                        <DropdownMenuItem onClick={() => handleRegistrar(a.id)}>
-                          <CheckCircle2 className="size-3.5" /> Registrar
-                        </DropdownMenuItem>
-                      )}
-                      <DropdownMenuItem
-                        onClick={() => openDeleteDialog(a.id, `Agendamento de ${a.professor.usuario.nome}`)}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="size-3.5" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
+        <div className="space-y-6">
+          {sortedDates.map(dateStr => {
+            const date = new Date(dateStr + "T12:00:00");
+            const diaSemana = date.toLocaleDateString("pt-BR", { weekday: "long" });
+            const dataFormatada = date.toLocaleDateString("pt-BR");
+            const agendamentosDoDia = grouped[dateStr].sort((a, b) => a.horario.localeCompare(b.horario));
+
+            return (
+              <div key={dateStr}>
+                <div className="flex items-baseline gap-2 mb-3 pb-2 border-b">
+                  <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                    {diaSemana}
+                  </span>
+                  <span className="text-lg font-bold">{dataFormatada}</span>
+                  <span className="text-xs text-muted-foreground ml-auto">{agendamentosDoDia.length} aula(s)</span>
+                </div>
+                <div className="space-y-2">
+                  {agendamentosDoDia.map(a => (
+                    <div
+                      key={a.id}
+                      className="flex items-center gap-4 rounded-lg border bg-card p-3 hover:shadow-sm transition-shadow"
+                    >
+                      <div className="flex flex-col items-center min-w-16">
+                        <span className="text-lg font-bold leading-tight">{a.horario}</span>
+                        <span className="text-xs text-muted-foreground">{a.duracao}min</span>
+                      </div>
+                      <div className="h-10 w-px bg-border" />
+                      <div className="flex-1 min-w-0 grid grid-cols-3 gap-2 text-sm">
+                        <div className="truncate">
+                          <span className="text-xs text-muted-foreground block">Professor</span>
+                          <span className="font-medium truncate block">{a.professor.usuario.nome}</span>
+                        </div>
+                        <div className="truncate">
+                          <span className="text-xs text-muted-foreground block">Aluno</span>
+                          <span className="font-medium truncate block">{a.aluno.usuario.nome}</span>
+                        </div>
+                        <div className="truncate">
+                          <span className="text-xs text-muted-foreground block">Sala</span>
+                          <span className="font-medium truncate block">{a.sala.nome}</span>
+                        </div>
+                      </div>
+                      <Badge className={statusBadge[a.status] + " shrink-0"}>{statusLabel[a.status]}</Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm" className="size-8 p-0 shrink-0">
+                            <MoreHorizontal className="size-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => openEdit(a)}>
+                            <Pencil className="size-3.5" /> Editar
+                          </DropdownMenuItem>
+                          {a.status !== "CONCLUIDO" && (
+                            <DropdownMenuItem onClick={() => handleRegistrar(a.id)}>
+                              <CheckCircle2 className="size-3.5" /> Registrar
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem
+                            onClick={() => openDeleteDialog(a.id, `Agendamento de ${a.professor.usuario.nome}`)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="size-3.5" /> Excluir
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       );
     }
 
