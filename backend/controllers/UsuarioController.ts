@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { PrismaClient } from "../generated/client.js";
+import bcrypt from "bcryptjs";
 
 export default function UsuarioController(prisma: PrismaClient): Router {
   const router = Router();
@@ -21,8 +22,9 @@ export default function UsuarioController(prisma: PrismaClient): Router {
   router.post("/", async (req, res) => {
     try {
       const { cpf, nome, telefone, email, role, permissions } = req.body;
+      const senhaHash = await bcrypt.hash("1234", 10);
       const usuario = await prisma.usuario.create({
-        data: { cpf, nome, telefone, email, role, permissions },
+        data: { cpf, nome, telefone, email, senha: senhaHash, role, permissions },
       });
       return res.status(201).json(usuario);
     } catch (error) {

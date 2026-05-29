@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { PrismaClient } from "../generated/client.js";
+import bcrypt from "bcryptjs";
 
 export default function AlunoController(prisma: PrismaClient): Router {
   const router = Router();
@@ -29,11 +30,12 @@ export default function AlunoController(prisma: PrismaClient): Router {
         const motivo = existente.cpf === cpf ? "CPF" : "email";
         return res.status(409).json({ error: `Já existe um aluno cadastrado com este ${motivo}` });
       }
+      const senhaHash = await bcrypt.hash("1234", 10);
       const aluno = await prisma.aluno.create({
         data: {
           matricula,
           usuario: {
-            create: { cpf, nome, telefone, email, role: "ALUNO", permissions },
+            create: { cpf, nome, telefone, email, senha: senhaHash, role: "ALUNO", permissions },
           },
         },
         include: { usuario: true },

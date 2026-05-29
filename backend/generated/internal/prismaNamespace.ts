@@ -830,6 +830,7 @@ export const UsuarioScalarFieldEnum = {
   nome: 'nome',
   telefone: 'telefone',
   email: 'email',
+  senha: 'senha',
   role: 'role',
   permissions: 'permissions'
 } as const

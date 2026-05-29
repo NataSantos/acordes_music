@@ -1,0 +1,12 @@
+import { PrismaClient } from './generated/client.js';
+import { PrismaBetterSqlite3 } from '@prisma/adapter-better-sqlite3';
+import bcrypt from 'bcryptjs';
+const prisma = new PrismaClient({ adapter: new PrismaBetterSqlite3({ url: process.env.DATABASE_URL ?? 'file:./dev.db' }) });
+const u = await prisma.usuario.findFirst({ where: { cpf: '00000000000' } });
+console.log('Admin exists:', !!u);
+if (u) console.log('Senha hash:', u.senha, 'Matches 1234:', bcrypt.compareSync('1234', u.senha));
+const total = await prisma.usuario.count();
+console.log('Total users:', total);
+const first = await prisma.usuario.findFirst();
+if (first) console.log('First user:', first.cpf, first.nome, 'Hash:', first.senha.slice(0, 15) + '...', 'Matches 1234:', bcrypt.compareSync('1234', first.senha));
+await prisma.$disconnect();

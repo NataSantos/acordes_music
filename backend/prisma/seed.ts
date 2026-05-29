@@ -1,5 +1,6 @@
 import { PrismaClient } from "../generated/client.js";
 import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient({
   adapter: new PrismaBetterSqlite3({
@@ -9,6 +10,19 @@ const prisma = new PrismaClient({
 
 async function main() {
   console.log("Iniciando seed...");
+
+  const senhaPadrao = await bcrypt.hash("1234", 10);
+
+  // Admin user
+  const adminExists = await prisma.usuario.findFirst({ where: { cpf: "00000000000" } });
+  if (!adminExists) {
+    await prisma.usuario.create({
+      data: { cpf: "00000000000", nome: "Administrador", telefone: "11900000000", email: "admin@acordes.com", senha: senhaPadrao, role: "ADMIN" },
+    });
+    console.log("Admin criado: Administrador");
+  } else {
+    console.log("Admin ja existe");
+  }
 
   const salas = [
     { nome: "Sala de Piano", capacidade: 3, descricao: "Piano de cauda e bancos ajustáveis" },
@@ -45,7 +59,7 @@ async function main() {
           endereco: "Sao Paulo, SP",
           profissao: p.profissao,
           usuario: {
-            create: { cpf: p.cpf, nome: p.nome, telefone: p.telefone, email: p.email, role: "PROFESSOR" },
+            create: { cpf: p.cpf, nome: p.nome, telefone: p.telefone, email: p.email, senha: senhaPadrao, role: "PROFESSOR" },
           },
         },
       });
@@ -73,7 +87,7 @@ async function main() {
         data: {
           matricula: a.matricula,
           usuario: {
-            create: { cpf: a.cpf, nome: a.nome, telefone: a.telefone, email: a.email, role: "ALUNO" },
+            create: { cpf: a.cpf, nome: a.nome, telefone: a.telefone, email: a.email, senha: senhaPadrao, role: "ALUNO" },
           },
         },
       });

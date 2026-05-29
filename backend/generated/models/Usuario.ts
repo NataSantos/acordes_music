@@ -30,6 +30,7 @@ export type UsuarioMinAggregateOutputType = {
   nome: string | null
   telefone: string | null
   email: string | null
+  senha: string | null
   role: $Enums.Role | null
   permissions: string | null
 }
@@ -40,6 +41,7 @@ export type UsuarioMaxAggregateOutputType = {
   nome: string | null
   telefone: string | null
   email: string | null
+  senha: string | null
   role: $Enums.Role | null
   permissions: string | null
 }
@@ -50,6 +52,7 @@ export type UsuarioCountAggregateOutputType = {
   nome: number
   telefone: number
   email: number
+  senha: number
   role: number
   permissions: number
   _all: number
@@ -62,6 +65,7 @@ export type UsuarioMinAggregateInputType = {
   nome?: true
   telefone?: true
   email?: true
+  senha?: true
   role?: true
   permissions?: true
 }
@@ -72,6 +76,7 @@ export type UsuarioMaxAggregateInputType = {
   nome?: true
   telefone?: true
   email?: true
+  senha?: true
   role?: true
   permissions?: true
 }
@@ -82,6 +87,7 @@ export type UsuarioCountAggregateInputType = {
   nome?: true
   telefone?: true
   email?: true
+  senha?: true
   role?: true
   permissions?: true
   _all?: true
@@ -165,6 +171,7 @@ export type UsuarioGroupByOutputType = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions: string | null
   _count: UsuarioCountAggregateOutputType | null
@@ -196,6 +203,7 @@ export type UsuarioWhereInput = {
   nome?: Prisma.StringFilter<"Usuario"> | string
   telefone?: Prisma.StringFilter<"Usuario"> | string
   email?: Prisma.StringFilter<"Usuario"> | string
+  senha?: Prisma.StringFilter<"Usuario"> | string
   role?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
   permissions?: Prisma.StringNullableFilter<"Usuario"> | string | null
   professor?: Prisma.XOR<Prisma.ProfessorNullableScalarRelationFilter, Prisma.ProfessorWhereInput> | null
@@ -208,6 +216,7 @@ export type UsuarioOrderByWithRelationInput = {
   nome?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  senha?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrderInput | Prisma.SortOrder
   professor?: Prisma.ProfessorOrderByWithRelationInput
@@ -223,6 +232,7 @@ export type UsuarioWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.UsuarioWhereInput | Prisma.UsuarioWhereInput[]
   nome?: Prisma.StringFilter<"Usuario"> | string
   telefone?: Prisma.StringFilter<"Usuario"> | string
+  senha?: Prisma.StringFilter<"Usuario"> | string
   role?: Prisma.EnumRoleFilter<"Usuario"> | $Enums.Role
   permissions?: Prisma.StringNullableFilter<"Usuario"> | string | null
   professor?: Prisma.XOR<Prisma.ProfessorNullableScalarRelationFilter, Prisma.ProfessorWhereInput> | null
@@ -235,6 +245,7 @@ export type UsuarioOrderByWithAggregationInput = {
   nome?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  senha?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.UsuarioCountOrderByAggregateInput
@@ -251,6 +262,7 @@ export type UsuarioScalarWhereWithAggregatesInput = {
   nome?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   telefone?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   email?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
+  senha?: Prisma.StringWithAggregatesFilter<"Usuario"> | string
   role?: Prisma.EnumRoleWithAggregatesFilter<"Usuario"> | $Enums.Role
   permissions?: Prisma.StringNullableWithAggregatesFilter<"Usuario"> | string | null
 }
@@ -261,6 +273,7 @@ export type UsuarioCreateInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
   professor?: Prisma.ProfessorCreateNestedOneWithoutUsuarioInput
@@ -273,6 +286,7 @@ export type UsuarioUncheckedCreateInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
   professor?: Prisma.ProfessorUncheckedCreateNestedOneWithoutUsuarioInput
@@ -285,6 +299,7 @@ export type UsuarioUpdateInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   professor?: Prisma.ProfessorUpdateOneWithoutUsuarioNestedInput
@@ -297,6 +312,7 @@ export type UsuarioUncheckedUpdateInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   professor?: Prisma.ProfessorUncheckedUpdateOneWithoutUsuarioNestedInput
@@ -309,6 +325,7 @@ export type UsuarioCreateManyInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
 }
@@ -319,6 +336,7 @@ export type UsuarioUpdateManyMutationInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -329,6 +347,7 @@ export type UsuarioUncheckedUpdateManyInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
 }
@@ -339,6 +358,7 @@ export type UsuarioCountOrderByAggregateInput = {
   nome?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  senha?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
 }
@@ -349,6 +369,7 @@ export type UsuarioMaxOrderByAggregateInput = {
   nome?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  senha?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
 }
@@ -359,6 +380,7 @@ export type UsuarioMinOrderByAggregateInput = {
   nome?: Prisma.SortOrder
   telefone?: Prisma.SortOrder
   email?: Prisma.SortOrder
+  senha?: Prisma.SortOrder
   role?: Prisma.SortOrder
   permissions?: Prisma.SortOrder
 }
@@ -406,6 +428,7 @@ export type UsuarioCreateWithoutProfessorInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
   aluno?: Prisma.AlunoCreateNestedOneWithoutUsuarioInput
@@ -417,6 +440,7 @@ export type UsuarioUncheckedCreateWithoutProfessorInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
   aluno?: Prisma.AlunoUncheckedCreateNestedOneWithoutUsuarioInput
@@ -444,6 +468,7 @@ export type UsuarioUpdateWithoutProfessorInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aluno?: Prisma.AlunoUpdateOneWithoutUsuarioNestedInput
@@ -455,6 +480,7 @@ export type UsuarioUncheckedUpdateWithoutProfessorInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   aluno?: Prisma.AlunoUncheckedUpdateOneWithoutUsuarioNestedInput
@@ -466,6 +492,7 @@ export type UsuarioCreateWithoutAlunoInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
   professor?: Prisma.ProfessorCreateNestedOneWithoutUsuarioInput
@@ -477,6 +504,7 @@ export type UsuarioUncheckedCreateWithoutAlunoInput = {
   nome: string
   telefone: string
   email: string
+  senha: string
   role: $Enums.Role
   permissions?: string | null
   professor?: Prisma.ProfessorUncheckedCreateNestedOneWithoutUsuarioInput
@@ -504,6 +532,7 @@ export type UsuarioUpdateWithoutAlunoInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   professor?: Prisma.ProfessorUpdateOneWithoutUsuarioNestedInput
@@ -515,6 +544,7 @@ export type UsuarioUncheckedUpdateWithoutAlunoInput = {
   nome?: Prisma.StringFieldUpdateOperationsInput | string
   telefone?: Prisma.StringFieldUpdateOperationsInput | string
   email?: Prisma.StringFieldUpdateOperationsInput | string
+  senha?: Prisma.StringFieldUpdateOperationsInput | string
   role?: Prisma.EnumRoleFieldUpdateOperationsInput | $Enums.Role
   permissions?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   professor?: Prisma.ProfessorUncheckedUpdateOneWithoutUsuarioNestedInput
@@ -528,6 +558,7 @@ export type UsuarioSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   nome?: boolean
   telefone?: boolean
   email?: boolean
+  senha?: boolean
   role?: boolean
   permissions?: boolean
   professor?: boolean | Prisma.Usuario$professorArgs<ExtArgs>
@@ -540,6 +571,7 @@ export type UsuarioSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Exten
   nome?: boolean
   telefone?: boolean
   email?: boolean
+  senha?: boolean
   role?: boolean
   permissions?: boolean
 }, ExtArgs["result"]["usuario"]>
@@ -550,6 +582,7 @@ export type UsuarioSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Exten
   nome?: boolean
   telefone?: boolean
   email?: boolean
+  senha?: boolean
   role?: boolean
   permissions?: boolean
 }, ExtArgs["result"]["usuario"]>
@@ -560,11 +593,12 @@ export type UsuarioSelectScalar = {
   nome?: boolean
   telefone?: boolean
   email?: boolean
+  senha?: boolean
   role?: boolean
   permissions?: boolean
 }
 
-export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "cpf" | "nome" | "telefone" | "email" | "role" | "permissions", ExtArgs["result"]["usuario"]>
+export type UsuarioOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "cpf" | "nome" | "telefone" | "email" | "senha" | "role" | "permissions", ExtArgs["result"]["usuario"]>
 export type UsuarioInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   professor?: boolean | Prisma.Usuario$professorArgs<ExtArgs>
   aluno?: boolean | Prisma.Usuario$alunoArgs<ExtArgs>
@@ -584,6 +618,7 @@ export type $UsuarioPayload<ExtArgs extends runtime.Types.Extensions.InternalArg
     nome: string
     telefone: string
     email: string
+    senha: string
     role: $Enums.Role
     permissions: string | null
   }, ExtArgs["result"]["usuario"]>
@@ -1016,6 +1051,7 @@ export interface UsuarioFieldRefs {
   readonly nome: Prisma.FieldRef<"Usuario", 'String'>
   readonly telefone: Prisma.FieldRef<"Usuario", 'String'>
   readonly email: Prisma.FieldRef<"Usuario", 'String'>
+  readonly senha: Prisma.FieldRef<"Usuario", 'String'>
   readonly role: Prisma.FieldRef<"Usuario", 'Role'>
   readonly permissions: Prisma.FieldRef<"Usuario", 'String'>
 }

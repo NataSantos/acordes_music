@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { PrismaClient } from "../generated/client.js";
+import bcrypt from "bcryptjs";
 
 export default function ProfessorController(prisma: PrismaClient): Router {
   const router = Router();
@@ -29,13 +30,14 @@ export default function ProfessorController(prisma: PrismaClient): Router {
         const motivo = existente.cpf === cpf ? "CPF" : "email";
         return res.status(409).json({ error: `Já existe um professor cadastrado com este ${motivo}` });
       }
+      const senhaHash = await bcrypt.hash("1234", 10);
       const professor = await prisma.professor.create({
         data: {
           civil,
           endereco,
           profissao,
           usuario: {
-            create: { cpf, nome, telefone, email, role: "PROFESSOR", permissions },
+            create: { cpf, nome, telefone, email, senha: senhaHash, role: "PROFESSOR", permissions },
           },
         },
         include: { usuario: true },

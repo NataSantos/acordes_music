@@ -76,10 +76,15 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     return conflitos;
   }
 
-  router.get("/", async (_req, res) => {
+  router.get("/", async (req, res) => {
     try {
+      const where: Record<string, unknown> = {};
+      if (req.query.professorId) {
+        where.professorId = req.query.professorId as string;
+      }
       const agendamentos = await prisma.agendamento.findMany({
         orderBy: { data: "desc" },
+        where: where as any,
         include,
       });
       return res.json(agendamentos);

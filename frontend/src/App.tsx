@@ -27,9 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { format } from "date-fns";
-import { ptBR } from "date-fns/locale";
-import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -71,11 +69,11 @@ const statusBadge: Record<string, string> = {
   CONCLUIDO: "bg-emerald-100 text-emerald-700 border-emerald-200",
 };
 
-const tabs: { value: Section; label: string }[] = [
-  { value: "salas", label: "Salas" },
-  { value: "professores", label: "Professores" },
-  { value: "alunos", label: "Alunos" },
-  { value: "agendamentos", label: "Agendamentos" },
+const tabs: { value: Section; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
+  { value: "salas", label: "Salas", icon: Building2 },
+  { value: "professores", label: "Professores", icon: GraduationCap },
+  { value: "alunos", label: "Alunos", icon: BookUser },
+  { value: "agendamentos", label: "Agendamentos", icon: CalendarDays },
 ];
 
 function App() {
@@ -92,6 +90,9 @@ function App() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("");
+  const [filterSala, setFilterSala] = useState<string>("");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingItem, setDeletingItem] = useState<{ id: string; label: string } | null>(null);
   const conflitoReqId = useRef(0);
@@ -101,35 +102,138 @@ function App() {
     professorId: "", alunoId: "", salaId: "",
     data: "", horario: "", duracao: "60", observacao: "",
   });
+  const [repetirSemanal, setRepetirSemanal] = useState(false);
+  const [repetirSemanas, setRepetirSemanas] = useState(4);
+  const [user, setUser] = useState<{ nome: string; role: string; professorId: string | null; token: string; cpf: string } | null>(null);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginSenha, setLoginSenha] = useState("");
+  const [loginError, setLoginError] = useState("");
+  const [loginLoading, setLoginLoading] = useState(false);
+  const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
+  const [senhaForm, setSenhaForm] = useState({ senhaAtual: "", senhaNova: "", confirmar: "" });
+  const [perfilDialogOpen, setPerfilDialogOpen] = useState(false);
+  const [perfilForm, setPerfilForm] = useState({ nome: "", email: "", telefone: "" });
+  const [perfilLoading, setPerfilLoading] = useState(false);
 
   useEffect(() => {
     if (error) setErrorDialogOpen(true);
   }, [error]);
 
+  const apiFetch = async (url: string, options?: RequestInit) => {
+    const headers: Record<string, string> = { ...(options?.headers as Record<string, string> || {}) };
+    if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
+    if (!headers["Content-Type"] && options?.method !== "GET" && !(options?.body instanceof FormData)) {
+      headers["Content-Type"] = "application/json";
+    }
+    return fetch(url, { ...options, headers });
+  };
+
+  const handleLogin = async () => {
+    if (!loginEmail || !loginSenha) { setLoginError("Preencha email e senha"); return; }
+    setLoginLoading(true);
+    setLoginError("");
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: loginEmail, senha: loginSenha }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Email ou senha inválidos");
+      }
+      const data = await res.json();
+      setUser({ nome: data.usuario.nome, role: data.usuario.role, professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf });
+    } catch (err) {
+      setLoginError(err instanceof Error ? err.message : "Erro ao fazer login");
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleLogout = () => {
+    setUser(null);
+    setLoginEmail("");
+    setLoginSenha("");
+  };
+
+  const handleAlterarSenha = async () => {
+    if (!senhaForm.senhaAtual || !senhaForm.senhaNova) { setError("Preencha todos os campos"); return; }
+    if (senhaForm.senhaNova.length < 4) { setError("A nova senha deve ter no mínimo 4 caracteres"); return; }
+    if (senhaForm.senhaNova !== senhaForm.confirmar) { setError("As senhas não conferem"); return; }
+    try {
+      const res = await apiFetch(`${backendUrl}/api/auth/senha`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ senhaAtual: senhaForm.senhaAtual, senhaNova: senhaForm.senhaNova }),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Erro ao alterar senha");
+      }
+      setSenhaDialogOpen(false);
+      setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao alterar senha");
+    }
+  };
+
+  const handleEditarPerfil = async () => {
+    if (!perfilForm.nome || !perfilForm.email || !perfilForm.telefone) {
+      setError("Preencha todos os campos"); return;
+    }
+    setPerfilLoading(true);
+    try {
+      const res = await apiFetch(`${backendUrl}/api/auth/me`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(perfilForm),
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => null);
+        throw new Error(err?.error || "Erro ao atualizar perfil");
+      }
+      const data = await res.json();
+      setUser(p => p ? { ...p, nome: data.nome } : null);
+      setPerfilDialogOpen(false);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao atualizar perfil");
+    } finally {
+      setPerfilLoading(false);
+    }
+  };
+
   useEffect(() => {
     (async () => {
       setLoading(true);
       try {
-        const [a, b, c, d] = await Promise.all([
+        const headers: Record<string, string> = {};
+        if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
+        const [a, b, c] = await Promise.all([
           fetch(`${backendUrl}/api/salas`),
           fetch(`${backendUrl}/api/professores`),
           fetch(`${backendUrl}/api/alunos`),
-          fetch(`${backendUrl}/api/agendamentos`),
         ]);
-        if (!a.ok || !b.ok || !c.ok || !d.ok) throw new Error("Falha ao carregar dados");
-        const [sd, pd, ad, agd] = await Promise.all([a.json(), b.json(), c.json(), d.json()]);
-        setSalas(sd); setProfessores(pd); setAlunos(ad); setAgendamentos(agd);
+        if (!a.ok || !b.ok || !c.ok) throw new Error("Falha ao carregar dados");
+        const [sd, pd, ad] = await Promise.all([a.json(), b.json(), c.json()]);
+        setSalas(sd); setProfessores(pd); setAlunos(ad);
+
+        const agdRes = await fetch(`${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`, { headers });
+        if (!agdRes.ok) throw new Error("Falha ao carregar agendamentos");
+        setAgendamentos(await agdRes.json());
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao carregar");
       } finally {
         setLoading(false);
       }
     })();
-  }, []);
+  }, [user]);
 
   const resetForm = () => {
     setEditingId(null);
     setConflitos([]);
+    setRepetirSemanal(false);
+    setRepetirSemanas(4);
     setForm({
       nome: "", descricao: "", capacidade: "",
       cpf: "", email: "", telefone: "", profissao: "", matricula: "",
@@ -139,7 +243,13 @@ function App() {
     setError(null);
   };
 
-  const openCreate = () => { resetForm(); setDialogOpen(true); };
+  const openCreate = () => {
+    resetForm();
+    if (user?.role === "PROFESSOR" && user.professorId) {
+      setForm(p => ({ ...p, professorId: user.professorId! }));
+    }
+    setDialogOpen(true);
+  };
 
   const openEdit = (item: Sala | Professor | Aluno | Agendamento) => {
     resetForm();
@@ -226,11 +336,14 @@ function App() {
   }, [section, dialogOpen, form.professorId, form.alunoId, form.salaId, form.data, form.horario, form.duracao, editingId]);
 
   const refreshData = async () => {
+    const headers: Record<string, string> = {};
+    if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
     const fetches: Promise<Response>[] = [];
     if (section === "salas" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/salas`));
     if (section === "professores" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/professores`));
     if (section === "alunos" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/alunos`));
-    fetches.push(fetch(`${backendUrl}/api/agendamentos`));
+    const agdUrl = `${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`;
+    fetches.push(fetch(agdUrl, { headers }));
 
     const results = await Promise.all(fetches);
     const data = await Promise.all(results.map(r => r.json()));
@@ -295,14 +408,35 @@ function App() {
           observacao: form.observacao || null,
         };
       }
-      const res = await fetch(`${backendUrl}/api/${endpoint}${editingId ? `/${editingId}` : ""}`, {
-        method: editingId ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null);
-        throw new Error(errData?.error || "Falha ao salvar");
+
+      if (section === "agendamentos" && repetirSemanal && !editingId) {
+        const datas: string[] = [form.data];
+        for (let i = 1; i < repetirSemanas; i++) {
+          const d = new Date(form.data.slice(0, 10) + "T12:00:00");
+          d.setDate(d.getDate() + i * 7);
+          datas.push(d.toISOString().slice(0, 10));
+        }
+        for (const data of datas) {
+          const res = await fetch(`${backendUrl}/api/agendamentos`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ...payload, data }),
+          });
+          if (!res.ok) {
+            const errData = await res.json().catch(() => null);
+            throw new Error(errData?.error || `Falha ao criar agendamento do dia ${data}`);
+          }
+        }
+      } else {
+        const res = await fetch(`${backendUrl}/api/${endpoint}${editingId ? `/${editingId}` : ""}`, {
+          method: editingId ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
+        });
+        if (!res.ok) {
+          const errData = await res.json().catch(() => null);
+          throw new Error(errData?.error || "Falha ao salvar");
+        }
       }
       await refreshData();
       setDialogOpen(false);
@@ -358,7 +492,28 @@ function App() {
     }
   };
 
-  const agendamentosFiltrados = agendamentos.filter(a => !filterStatus || a.status === filterStatus);
+  const q = searchQuery.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+
+  const agendamentosFiltrados = agendamentos.filter(a =>
+    (!filterStatus || a.status === filterStatus) &&
+    (!filterSala || a.salaId === filterSala) &&
+    (!q || (a.sala.nome + " " + a.professor.usuario.nome + " " + a.aluno.usuario.nome + " " + a.observacao + " " + a.horario)
+      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q))
+  );
+
+  const salasFiltradas = salas.filter(s =>
+    !q || s.nome.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
+  );
+
+  const professoresFiltrados = professores.filter(p =>
+    !q || (p.usuario.nome + " " + p.usuario.email + " " + p.usuario.cpf + " " + (p.profissao ?? ""))
+      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
+  );
+
+  const alunosFiltrados = alunos.filter(a =>
+    !q || (a.usuario.nome + " " + a.usuario.email + " " + a.usuario.cpf + " " + (a.matricula ?? ""))
+      .toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").includes(q)
+  );
 
   const renderTable = () => {
     if (section === "agendamentos") {
@@ -367,82 +522,171 @@ function App() {
         return <p className="text-muted-foreground text-center py-12">Nenhum agendamento encontrado</p>;
       }
 
-      const grouped = items.reduce<Record<string, typeof items>>((acc, a) => {
-        const key = a.data.slice(0, 10);
+      const sorted = [...items].sort((a, b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario));
+
+      const monthNames: Record<string, string> = {
+        "01": "Janeiro", "02": "Fevereiro", "03": "Março", "04": "Abril",
+        "05": "Maio", "06": "Junho", "07": "Julho", "08": "Agosto",
+        "09": "Setembro", "10": "Outubro", "11": "Novembro", "12": "Dezembro",
+      };
+
+      const monthGroups = sorted.reduce<Record<string, typeof sorted>>((acc, a) => {
+        const key = a.data.slice(0, 7);
         if (!acc[key]) acc[key] = [];
         acc[key].push(a);
         return acc;
       }, {});
-      const sortedDates = Object.keys(grouped).sort();
+
+      const getWeekStart = (dateStr: string) => {
+        const d = new Date(dateStr.slice(0, 10) + "T12:00:00");
+        const day = d.getDay();
+        d.setDate(d.getDate() - day + (day === 0 ? -6 : 1));
+        return d.toISOString().slice(0, 10);
+      };
+
+      const fmt = (dateStr: string) => {
+        const d = new Date(dateStr.slice(0, 10) + "T12:00:00");
+        return d.toLocaleDateString("pt-BR");
+      };
+
+      const fmtWeekRange = (ws: string) => {
+        const start = new Date(ws + "T12:00:00");
+        const end = new Date(start);
+        end.setDate(end.getDate() + 6);
+        return `${fmt(start.toISOString().slice(0, 10))} — ${fmt(end.toISOString().slice(0, 10))}`;
+      };
+
+      const fmtDay = (dateStr: string) => {
+        const d = new Date(dateStr.slice(0, 10) + "T12:00:00");
+        const nomes = ["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sáb"];
+        return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")} ${nomes[d.getDay()]}`;
+      };
 
       return (
-        <div className="space-y-6">
-          {sortedDates.map(dateStr => {
-            const date = new Date(dateStr + "T12:00:00");
-            const diaSemana = date.toLocaleDateString("pt-BR", { weekday: "long" });
-            const dataFormatada = date.toLocaleDateString("pt-BR");
-            const agendamentosDoDia = grouped[dateStr].sort((a, b) => a.horario.localeCompare(b.horario));
+        <div className="space-y-8">
+          {Object.entries(monthGroups).sort(([a], [b]) => a.localeCompare(b)).map(([monthKey, monthItems]) => {
+            const [year, monthNum] = monthKey.split("-");
+            const monthLabel = `${monthNames[monthNum] || monthNum} ${year}`;
+
+            const weekGroups = monthItems.reduce<Record<string, typeof monthItems>>((acc, a) => {
+              const wk = getWeekStart(a.data);
+              if (!acc[wk]) acc[wk] = [];
+              acc[wk].push(a);
+              return acc;
+            }, {});
+
+            const sortedWeeks = Object.keys(weekGroups).sort();
 
             return (
-              <div key={dateStr}>
-                <div className="flex items-baseline gap-2 mb-3 pb-2 border-b">
-                  <span className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-                    {diaSemana}
+              <div key={monthKey}>
+                <div className="flex items-baseline gap-3 mb-6">
+                  <h2 className="text-2xl font-bold tracking-tight">{monthLabel}</h2>
+                  <span className="text-sm text-muted-foreground">
+                    {monthItems.length} aula{monthItems.length !== 1 ? "s" : ""}
                   </span>
-                  <span className="text-lg font-bold">{dataFormatada}</span>
-                  <span className="text-xs text-muted-foreground ml-auto">{agendamentosDoDia.length} aula(s)</span>
                 </div>
-                <div className="space-y-2">
-                  {agendamentosDoDia.map(a => (
-                    <div
-                      key={a.id}
-                      className="flex items-center gap-4 rounded-lg border bg-card p-3 hover:shadow-sm transition-shadow"
-                    >
-                      <div className="flex flex-col items-center min-w-16">
-                        <span className="text-lg font-bold leading-tight">{a.horario}</span>
-                        <span className="text-xs text-muted-foreground">{a.duracao}min</span>
-                      </div>
-                      <div className="h-10 w-px bg-border" />
-                      <div className="flex-1 min-w-0 grid grid-cols-3 gap-2 text-sm">
-                        <div className="truncate">
-                          <span className="text-xs text-muted-foreground block">Professor</span>
-                          <span className="font-medium truncate block">{a.professor.usuario.nome}</span>
-                        </div>
-                        <div className="truncate">
-                          <span className="text-xs text-muted-foreground block">Aluno</span>
-                          <span className="font-medium truncate block">{a.aluno.usuario.nome}</span>
-                        </div>
-                        <div className="truncate">
-                          <span className="text-xs text-muted-foreground block">Sala</span>
-                          <span className="font-medium truncate block">{a.sala.nome}</span>
-                        </div>
-                      </div>
-                      <Badge className={statusBadge[a.status] + " shrink-0"}>{statusLabel[a.status]}</Badge>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="sm" className="size-8 p-0 shrink-0">
-                            <MoreHorizontal className="size-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openEdit(a)}>
-                            <Pencil className="size-3.5" /> Editar
-                          </DropdownMenuItem>
-                          {a.status !== "CONCLUIDO" && (
-                            <DropdownMenuItem onClick={() => handleRegistrar(a.id)}>
-                              <CheckCircle2 className="size-3.5" /> Registrar
-                            </DropdownMenuItem>
-                          )}
-                          <DropdownMenuItem
-                            onClick={() => openDeleteDialog(a.id, `Agendamento de ${a.professor.usuario.nome}`)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="size-3.5" /> Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  ))}
+
+                <div className="space-y-4">
+                  {sortedWeeks.map(weekId => {
+                    const weekItems = weekGroups[weekId];
+
+                    const dayGroups = weekItems.reduce<Record<string, typeof weekItems>>((acc, a) => {
+                      const dayKey = a.data.slice(0, 10);
+                      if (!acc[dayKey]) acc[dayKey] = [];
+                      acc[dayKey].push(a);
+                      return acc;
+                    }, {});
+
+                    const sortedDays = Object.keys(dayGroups).sort();
+
+                    return (
+                      <Card key={weekId}>
+                        <CardHeader className="py-3 px-5 bg-muted/30">
+                          <div className="flex items-center justify-between">
+                            <CardTitle className="text-sm font-medium">
+                              Semana de {fmtWeekRange(weekId)}
+                            </CardTitle>
+                            <span className="text-xs text-muted-foreground">
+                              {weekItems.length} aula{weekItems.length !== 1 ? "s" : ""}
+                            </span>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="p-0 divide-y">
+                          {sortedDays.map(dayKey => {
+                            const dayItems = dayGroups[dayKey];
+                            const hoje = new Date().toISOString().slice(0, 10) === dayKey;
+
+                            return (
+                              <div key={dayKey}>
+                                <div className={`px-5 py-2 text-xs font-medium uppercase tracking-wider flex items-center gap-2 ${hoje ? "bg-primary/10 text-primary" : "bg-muted/20 text-muted-foreground"}`}>
+                                  <span>{fmtDay(dayKey)}</span>
+                                  {hoje && <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-bold">HOJE</span>}
+                                </div>
+                                <div className="divide-y">
+                                  {dayItems.map(a => {
+                                    const duracaoLabel = a.duracao !== 60 ? `${a.duracao}min` : "";
+
+                                    return (
+                                      <div
+                                        key={a.id}
+                                        className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] gap-3 px-5 py-3 items-center text-sm hover:bg-muted/30 transition-colors"
+                                      >
+                                        <div className="flex items-center gap-1.5 min-w-[64px]">
+                                          <span className="font-mono text-sm font-semibold">{a.horario}</span>
+                                          {duracaoLabel && <span className="text-muted-foreground text-xs">({duracaoLabel})</span>}
+                                        </div>
+                                        <div className="truncate min-w-0">
+                                          <span className="text-muted-foreground text-[11px] block leading-tight">Sala</span>
+                                          <span className="font-medium truncate block">{a.sala.nome}</span>
+                                        </div>
+                                        <div className="truncate min-w-0">
+                                          <span className="text-muted-foreground text-[11px] block leading-tight">Professor</span>
+                                          <span className="font-medium truncate block">{a.professor.usuario.nome}</span>
+                                        </div>
+                                        <div className="truncate min-w-0">
+                                          <span className="text-muted-foreground text-[11px] block leading-tight">Aluno</span>
+                                          <span className="font-medium truncate block">{a.aluno.usuario.nome}</span>
+                                        </div>
+                                        <Badge className={statusBadge[a.status] + " shrink-0 self-center"}>{statusLabel[a.status]}</Badge>
+                                        <DropdownMenu>
+                                          <DropdownMenuTrigger asChild>
+                                            <Button variant="ghost" size="sm" className="size-8 p-0 shrink-0 self-center">
+                                              <MoreHorizontal className="size-4" />
+                                            </Button>
+                                          </DropdownMenuTrigger>
+                                          <DropdownMenuContent align="end">
+                                            {a.status !== "CONCLUIDO" && (
+                                              <DropdownMenuItem onClick={() => openEdit(a)}>
+                                                <CalendarClock className="size-3.5" /> Reagendar
+                                              </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem onClick={() => openEdit(a)}>
+                                              <Pencil className="size-3.5" /> Editar
+                                            </DropdownMenuItem>
+                                            {a.status !== "CONCLUIDO" && (
+                                              <DropdownMenuItem onClick={() => handleRegistrar(a.id)}>
+                                                <CheckCircle2 className="size-3.5" /> Registrar
+                                              </DropdownMenuItem>
+                                            )}
+                                            <DropdownMenuItem
+                                              onClick={() => openDeleteDialog(a.id, `Agendamento de ${a.professor.usuario.nome}`)}
+                                              className="text-destructive"
+                                            >
+                                              <Trash2 className="size-3.5" /> Excluir
+                                            </DropdownMenuItem>
+                                          </DropdownMenuContent>
+                                        </DropdownMenu>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
                 </div>
               </div>
             );
@@ -451,19 +695,21 @@ function App() {
       );
     }
 
-    const items = section === "salas" ? salas : section === "professores" ? professores : alunos;
+    const items = section === "salas" ? salasFiltradas : section === "professores" ? professoresFiltrados : alunosFiltrados;
     if (items.length === 0) {
       return <p className="text-muted-foreground text-center py-12">Nenhum registro encontrado</p>;
     }
+
+    const podeEditar = user?.role === "ADMIN";
 
     return (
       <Table>
         <TableHeader>
           <TableRow>
             {section === "salas" ? (
-              <><TableHead>Nome</TableHead><TableHead>Capacidade</TableHead><TableHead className="w-32">Ações</TableHead></>
+              <><TableHead>Nome</TableHead><TableHead>Capacidade</TableHead>{podeEditar && <TableHead className="w-32">Ações</TableHead>}</>
             ) : (
-              <><TableHead>Nome</TableHead><TableHead>Email</TableHead><TableHead className="w-32">Ações</TableHead></>
+              <><TableHead>Nome</TableHead><TableHead>Email</TableHead>{podeEditar && <TableHead className="w-32">Ações</TableHead>}</>
             )}
           </TableRow>
         </TableHeader>
@@ -477,26 +723,28 @@ function App() {
               ) : (
                 <><TableCell className="font-medium">{(item as Aluno).usuario.nome}</TableCell><TableCell>{(item as Aluno).usuario.email}</TableCell></>
               )}
-              <TableCell>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="size-8 p-0">
-                      <MoreHorizontal className="size-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem onClick={() => openEdit(item)}>
-                      <Pencil className="size-3.5" /> Editar
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => openDeleteDialog(item.id, getItemLabel(item))}
-                      className="text-destructive"
-                    >
-                      <Trash2 className="size-3.5" /> Excluir
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </TableCell>
+              {podeEditar && (
+                <TableCell>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" size="sm" className="size-8 p-0">
+                        <MoreHorizontal className="size-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => openEdit(item)}>
+                        <Pencil className="size-3.5" /> Editar
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => openDeleteDialog(item.id, getItemLabel(item))}
+                        className="text-destructive"
+                      >
+                        <Trash2 className="size-3.5" /> Excluir
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </TableCell>
+              )}
             </TableRow>
           ))}
         </TableBody>
@@ -510,12 +758,16 @@ function App() {
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Professor</Label>
-            <Select value={form.professorId} onValueChange={v => handleFormField("professorId", v)}>
-              <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
-              <SelectContent>
-                {professores.map(p => <SelectItem key={p.id} value={p.id}>{p.usuario.nome}</SelectItem>)}
-              </SelectContent>
-            </Select>
+            {user?.role === "PROFESSOR" ? (
+              <Input value={professores.find(p => p.id === user.professorId)?.usuario?.nome || ""} disabled className="bg-muted" />
+            ) : (
+              <Select value={form.professorId} onValueChange={v => handleFormField("professorId", v)}>
+                <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                <SelectContent>
+                  {professores.map(p => <SelectItem key={p.id} value={p.id}>{p.usuario.nome}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <div className="space-y-2">
             <Label>Aluno</Label>
@@ -551,6 +803,33 @@ function App() {
             <Label>Observação</Label>
             <Input value={form.observacao} onChange={e => handleFormField("observacao", e.target.value)} placeholder="Observações sobre a aula..." />
           </div>
+          {!editingId && (
+            <div className="col-span-2 flex items-center gap-3 pt-1">
+              <Label className="flex items-center gap-2 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="size-4 accent-neutral-900"
+                  checked={repetirSemanal}
+                  onChange={e => setRepetirSemanal(e.target.checked)}
+                />
+                <span>Repetir semanalmente</span>
+              </Label>
+              {repetirSemanal && (
+                <div className="flex items-center gap-1.5 text-sm">
+                  <span>por</span>
+                  <Input
+                    type="number"
+                    min={2}
+                    max={52}
+                    className="w-16 h-8 text-center text-sm"
+                    value={String(repetirSemanas)}
+                    onChange={e => setRepetirSemanas(Number(e.target.value) || 4)}
+                  />
+                  <span className="text-muted-foreground">semanas</span>
+                </div>
+              )}
+            </div>
+          )}
           {conflitos.length > 0 && (
             <div className="col-span-2 bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
               <p className="font-semibold mb-1">Conflito de horário:</p>
@@ -616,6 +895,53 @@ function App() {
     );
   };
 
+  if (!user) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-neutral-950">
+        <div className="w-full max-w-sm mx-auto p-8">
+          <div className="flex flex-col items-center gap-2 mb-8">
+            <Music className="size-10 text-white" />
+            <h1 className="text-2xl font-bold text-white tracking-tight">Acordes Music</h1>
+            <p className="text-sm text-white/50">Faça login para continuar</p>
+          </div>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label className="text-white/70 text-xs uppercase tracking-wider">Email</Label>
+              <Input
+                type="email"
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10"
+                placeholder="Digite seu email"
+                value={loginEmail}
+                onChange={e => setLoginEmail(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label className="text-white/70 text-xs uppercase tracking-wider">Senha</Label>
+              <Input
+                type="password"
+                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10"
+                placeholder="Digite sua senha"
+                value={loginSenha}
+                onChange={e => setLoginSenha(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleLogin()}
+              />
+            </div>
+            {loginError && (
+              <div className="flex items-center gap-2 text-sm text-red-400 bg-red-400/10 rounded-md px-3 py-2">
+                <AlertTriangle className="size-4 shrink-0" />
+                <span>{loginError}</span>
+              </div>
+            )}
+            <Button className="w-full h-10" onClick={handleLogin} disabled={loginLoading}>
+              {loginLoading ? "Entrando..." : "Entrar"}
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center">
@@ -628,60 +954,194 @@ function App() {
   }
 
   return (
-    <div className="h-screen flex flex-col">
-      <header className="border-b bg-card">
-        <div className="max-w-7xl mx-auto px-6 h-14 flex items-center justify-between">
-          <h1 className="text-lg font-bold tracking-tight">Acordes Music</h1>
-          <nav className="flex gap-1">
-            {tabs.map(t => (
+    <div className="h-screen flex">
+      <aside className={`${sidebarCollapsed ? "w-14" : "w-60"} transition-all duration-300 bg-neutral-950 text-white flex flex-col shrink-0`}>
+        <div className="h-14 border-b border-white/10 flex items-center gap-2 px-4">
+          <Music className="size-5 shrink-0" />
+          {!sidebarCollapsed && <span className="font-bold tracking-tight truncate">Acordes Music</span>}
+        </div>
+        <nav className="flex-1 p-2 space-y-0.5 overflow-auto">
+          {tabs.map(t => {
+            const Icon = t.icon;
+            return (
               <Button
                 key={t.value}
-                variant={section === t.value ? "default" : "ghost"}
-                size="sm"
+                variant="ghost"
+                className={`w-full justify-start gap-3 h-9 px-2 text-sm font-normal text-white/80 hover:text-white hover:bg-white/10 ${section === t.value ? "bg-white/10 text-white" : ""}`}
                 onClick={() => { setSection(t.value); setDialogOpen(false); }}
               >
-                {t.label}
+                <Icon className="size-4 shrink-0" />
+                {!sidebarCollapsed && t.label}
               </Button>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <main className="flex-1 overflow-auto p-6">
-        <div className="max-w-7xl mx-auto space-y-4">
-          <Card>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle>
-                {section === "salas" ? "Salas" :
-                 section === "professores" ? "Professores" :
-                 section === "alunos" ? "Alunos" : "Agendamentos"}
-              </CardTitle>
-              <Button onClick={openCreate}><Plus className="size-4" /> Novo</Button>
-            </CardHeader>
-            <CardContent>
-              {section === "agendamentos" && (
-                <div className="flex gap-2 mb-4">
-                  <Button
-                    variant={!filterStatus ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setFilterStatus("")}
-                  >Todos</Button>
-                  {["AGENDADO", "CONCLUIDO"].map(s => (
-                    <Button
-                      key={s}
-                      variant={filterStatus === s ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilterStatus(s)}
-                    >{statusLabel[s]}</Button>
+            );
+          })}
+        </nav>
+        {section === "agendamentos" && !sidebarCollapsed && (
+          <div className="px-3 py-3 space-y-3 border-t border-white/10">
+            <div className="space-y-2">
+              <span className="text-xs text-white/50 font-medium uppercase tracking-wider">Status</span>
+              <div className="flex flex-wrap gap-1">
+                <button
+                  className={`text-xs px-2.5 py-1 rounded-md transition-colors ${!filterStatus ? "bg-white/20 text-white" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                  onClick={() => setFilterStatus("")}
+                >Todos</button>
+                {["AGENDADO", "CONCLUIDO"].map(s => (
+                  <button
+                    key={s}
+                    className={`text-xs px-2.5 py-1 rounded-md transition-colors ${filterStatus === s ? "bg-white/20 text-white" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                    onClick={() => setFilterStatus(s)}
+                  >{statusLabel[s]}</button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-1.5">
+              <span className="text-xs text-white/50 font-medium uppercase tracking-wider">Sala</span>
+              <Select value={filterSala || "todas"} onValueChange={v => setFilterSala(v === "todas" ? "" : v)}>
+                <SelectTrigger className="w-full h-8 text-xs bg-white/5 border-white/10 text-white/80">
+                  <SelectValue placeholder="Todas as salas" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas as salas</SelectItem>
+                  {salas.map(s => (
+                    <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>
                   ))}
-                </div>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        )}
+        {section === "agendamentos" && sidebarCollapsed && (
+          <div className="px-1 py-2 border-t border-white/10 flex justify-center">
+            <button
+              className="relative size-8 flex items-center justify-center rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              onClick={() => setSidebarCollapsed(false)}
+              title="Filtros"
+            >
+              <ListFilter className="size-4" />
+              {(filterStatus || filterSala) && (
+                <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-400" />
               )}
-
-              <div className="overflow-x-auto">{renderTable()}</div>
-            </CardContent>
-          </Card>
+            </button>
+          </div>
+        )}
+        <div className="mt-auto border-t border-white/10">
+          {!sidebarCollapsed && (
+            <div className="px-3 py-2 border-b border-white/10">
+              <button
+                className="flex items-center gap-2 w-full text-xs text-white/60 hover:text-white transition-colors"
+                onClick={async () => {
+                  try {
+                    const res = await apiFetch(`${backendUrl}/api/auth/me`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      setPerfilForm({ nome: data.nome, email: data.email, telefone: data.telefone ?? "" });
+                    } else {
+                      setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                    }
+                  } catch {
+                    setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                  }
+                  setPerfilDialogOpen(true);
+                }}
+              >
+                <User className="size-3.5" />
+                <span>Editar Perfil</span>
+              </button>
+            </div>
+          )}
+          <div className="p-2 flex gap-1 items-center">
+            {!sidebarCollapsed && (
+              <span className="flex-1 truncate text-xs text-white/50 px-1">{user?.nome}</span>
+            )}
+            {!sidebarCollapsed && user?.role === "PROFESSOR" && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
+                onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
+                title="Alterar senha"
+              >
+                <span className="text-[10px] font-medium">#</span>
+              </Button>
+            )}
+            {sidebarCollapsed && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
+                onClick={async () => {
+                  try {
+                    const res = await apiFetch(`${backendUrl}/api/auth/me`);
+                    if (res.ok) {
+                      const data = await res.json();
+                      setPerfilForm({ nome: data.nome, email: data.email, telefone: data.telefone ?? "" });
+                    } else {
+                      setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                    }
+                  } catch {
+                    setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                  }
+                  setPerfilDialogOpen(true);
+                }}
+                title="Editar Perfil"
+              >
+                <User className="size-3.5" />
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
+              onClick={handleLogout}
+              title="Sair"
+            >
+              <LogOut className="size-3.5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
+              onClick={() => setSidebarCollapsed(p => !p)}
+              title={sidebarCollapsed ? "Expandir" : "Recolher"}
+            >
+              {sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
+            </Button>
+          </div>
         </div>
-      </main>
+      </aside>
+
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <main className="flex-1 overflow-auto p-6">
+          <div className="max-w-7xl mx-auto space-y-4">
+            <Card>
+              <CardHeader className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle>
+                    {section === "salas" ? "Salas" :
+                     section === "professores" ? "Professores" :
+                     section === "alunos" ? "Alunos" : "Agendamentos"}
+                  </CardTitle>
+                  <Button size="sm" onClick={openCreate} style={{ display: (user?.role !== "ADMIN" && section !== "agendamentos") ? "none" : undefined }}>
+                    <Plus className="size-3.5" /> Novo
+                  </Button>
+                </div>
+                <div className="relative max-w-xs">
+                  <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    className="w-full h-9 pl-8 text-sm"
+                    placeholder="Pesquisar..."
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                  />
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">{renderTable()}</div>
+              </CardContent>
+            </Card>
+          </div>
+        </main>
+      </div>
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm">
@@ -736,6 +1196,60 @@ function App() {
             <Button onClick={handleSubmit} disabled={section === "agendamentos" && conflitos.length > 0}>
               {editingId ? "Atualizar" : "Salvar"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={senhaDialogOpen} onOpenChange={setSenhaDialogOpen}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Alterar senha</DialogTitle>
+            <DialogDescription>Digite sua senha atual e a nova senha.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Senha atual</Label>
+              <Input type="password" value={senhaForm.senhaAtual} onChange={e => setSenhaForm(p => ({ ...p, senhaAtual: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Nova senha</Label>
+              <Input type="password" value={senhaForm.senhaNova} onChange={e => setSenhaForm(p => ({ ...p, senhaNova: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Confirmar nova senha</Label>
+              <Input type="password" value={senhaForm.confirmar} onChange={e => setSenhaForm(p => ({ ...p, confirmar: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSenhaDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAlterarSenha}>Alterar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={perfilDialogOpen} onOpenChange={v => { setPerfilDialogOpen(v); if (!v) setError(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Editar Perfil</DialogTitle>
+            <DialogDescription>Atualize suas informações pessoais.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Nome</Label>
+              <Input value={perfilForm.nome} onChange={e => setPerfilForm(p => ({ ...p, nome: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" value={perfilForm.email} onChange={e => setPerfilForm(p => ({ ...p, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Telefone</Label>
+              <Input value={perfilForm.telefone} onChange={e => setPerfilForm(p => ({ ...p, telefone: e.target.value.replace(/\D/g, "") }))} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPerfilDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleEditarPerfil} disabled={perfilLoading}>{perfilLoading ? "Salvando..." : "Salvar"}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

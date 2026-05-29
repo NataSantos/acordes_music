@@ -29,6 +29,7 @@ model Usuario {
   nome       String
   telefone   String
   email      String    @unique
+  senha      String
   role       Role
   permissions String?
 
