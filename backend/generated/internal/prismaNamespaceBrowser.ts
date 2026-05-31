@@ -126,6 +126,7 @@ export const AgendamentoScalarFieldEnum = {
   horario: 'horario',
   duracao: 'duracao',
   status: 'status',
+  valor: 'valor',
   observacao: 'observacao',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'

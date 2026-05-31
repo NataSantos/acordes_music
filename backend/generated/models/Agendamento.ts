@@ -28,10 +28,12 @@ export type AggregateAgendamento = {
 
 export type AgendamentoAvgAggregateOutputType = {
   duracao: number | null
+  valor: number | null
 }
 
 export type AgendamentoSumAggregateOutputType = {
   duracao: number | null
+  valor: number | null
 }
 
 export type AgendamentoMinAggregateOutputType = {
@@ -43,6 +45,7 @@ export type AgendamentoMinAggregateOutputType = {
   horario: string | null
   duracao: number | null
   status: $Enums.AgendamentoStatus | null
+  valor: number | null
   observacao: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -57,6 +60,7 @@ export type AgendamentoMaxAggregateOutputType = {
   horario: string | null
   duracao: number | null
   status: $Enums.AgendamentoStatus | null
+  valor: number | null
   observacao: string | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -71,6 +75,7 @@ export type AgendamentoCountAggregateOutputType = {
   horario: number
   duracao: number
   status: number
+  valor: number
   observacao: number
   createdAt: number
   updatedAt: number
@@ -80,10 +85,12 @@ export type AgendamentoCountAggregateOutputType = {
 
 export type AgendamentoAvgAggregateInputType = {
   duracao?: true
+  valor?: true
 }
 
 export type AgendamentoSumAggregateInputType = {
   duracao?: true
+  valor?: true
 }
 
 export type AgendamentoMinAggregateInputType = {
@@ -95,6 +102,7 @@ export type AgendamentoMinAggregateInputType = {
   horario?: true
   duracao?: true
   status?: true
+  valor?: true
   observacao?: true
   createdAt?: true
   updatedAt?: true
@@ -109,6 +117,7 @@ export type AgendamentoMaxAggregateInputType = {
   horario?: true
   duracao?: true
   status?: true
+  valor?: true
   observacao?: true
   createdAt?: true
   updatedAt?: true
@@ -123,6 +132,7 @@ export type AgendamentoCountAggregateInputType = {
   horario?: true
   duracao?: true
   status?: true
+  valor?: true
   observacao?: true
   createdAt?: true
   updatedAt?: true
@@ -224,6 +234,7 @@ export type AgendamentoGroupByOutputType = {
   horario: string
   duracao: number
   status: $Enums.AgendamentoStatus
+  valor: number | null
   observacao: string | null
   createdAt: Date
   updatedAt: Date
@@ -261,6 +272,7 @@ export type AgendamentoWhereInput = {
   horario?: Prisma.StringFilter<"Agendamento"> | string
   duracao?: Prisma.IntFilter<"Agendamento"> | number
   status?: Prisma.EnumAgendamentoStatusFilter<"Agendamento"> | $Enums.AgendamentoStatus
+  valor?: Prisma.FloatNullableFilter<"Agendamento"> | number | null
   observacao?: Prisma.StringNullableFilter<"Agendamento"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Agendamento"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agendamento"> | Date | string
@@ -278,6 +290,7 @@ export type AgendamentoOrderByWithRelationInput = {
   horario?: Prisma.SortOrder
   duracao?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  valor?: Prisma.SortOrderInput | Prisma.SortOrder
   observacao?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -298,6 +311,7 @@ export type AgendamentoWhereUniqueInput = Prisma.AtLeast<{
   horario?: Prisma.StringFilter<"Agendamento"> | string
   duracao?: Prisma.IntFilter<"Agendamento"> | number
   status?: Prisma.EnumAgendamentoStatusFilter<"Agendamento"> | $Enums.AgendamentoStatus
+  valor?: Prisma.FloatNullableFilter<"Agendamento"> | number | null
   observacao?: Prisma.StringNullableFilter<"Agendamento"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Agendamento"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agendamento"> | Date | string
@@ -315,6 +329,7 @@ export type AgendamentoOrderByWithAggregationInput = {
   horario?: Prisma.SortOrder
   duracao?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  valor?: Prisma.SortOrderInput | Prisma.SortOrder
   observacao?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -337,6 +352,7 @@ export type AgendamentoScalarWhereWithAggregatesInput = {
   horario?: Prisma.StringWithAggregatesFilter<"Agendamento"> | string
   duracao?: Prisma.IntWithAggregatesFilter<"Agendamento"> | number
   status?: Prisma.EnumAgendamentoStatusWithAggregatesFilter<"Agendamento"> | $Enums.AgendamentoStatus
+  valor?: Prisma.FloatNullableWithAggregatesFilter<"Agendamento"> | number | null
   observacao?: Prisma.StringNullableWithAggregatesFilter<"Agendamento"> | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Agendamento"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"Agendamento"> | Date | string
@@ -348,6 +364,7 @@ export type AgendamentoCreateInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -365,6 +382,7 @@ export type AgendamentoUncheckedCreateInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -376,6 +394,7 @@ export type AgendamentoUpdateInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -393,6 +412,7 @@ export type AgendamentoUncheckedUpdateInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -407,6 +427,7 @@ export type AgendamentoCreateManyInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -418,6 +439,7 @@ export type AgendamentoUpdateManyMutationInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -432,6 +454,7 @@ export type AgendamentoUncheckedUpdateManyInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -456,6 +479,7 @@ export type AgendamentoCountOrderByAggregateInput = {
   horario?: Prisma.SortOrder
   duracao?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  valor?: Prisma.SortOrder
   observacao?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -463,6 +487,7 @@ export type AgendamentoCountOrderByAggregateInput = {
 
 export type AgendamentoAvgOrderByAggregateInput = {
   duracao?: Prisma.SortOrder
+  valor?: Prisma.SortOrder
 }
 
 export type AgendamentoMaxOrderByAggregateInput = {
@@ -474,6 +499,7 @@ export type AgendamentoMaxOrderByAggregateInput = {
   horario?: Prisma.SortOrder
   duracao?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  valor?: Prisma.SortOrder
   observacao?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -488,6 +514,7 @@ export type AgendamentoMinOrderByAggregateInput = {
   horario?: Prisma.SortOrder
   duracao?: Prisma.SortOrder
   status?: Prisma.SortOrder
+  valor?: Prisma.SortOrder
   observacao?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -495,6 +522,7 @@ export type AgendamentoMinOrderByAggregateInput = {
 
 export type AgendamentoSumOrderByAggregateInput = {
   duracao?: Prisma.SortOrder
+  valor?: Prisma.SortOrder
 }
 
 export type AgendamentoCreateNestedManyWithoutSalaInput = {
@@ -627,12 +655,21 @@ export type EnumAgendamentoStatusFieldUpdateOperationsInput = {
   set?: $Enums.AgendamentoStatus
 }
 
+export type NullableFloatFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
 export type AgendamentoCreateWithoutSalaInput = {
   id?: string
   data: Date | string
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -648,6 +685,7 @@ export type AgendamentoUncheckedCreateWithoutSalaInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -690,6 +728,7 @@ export type AgendamentoScalarWhereInput = {
   horario?: Prisma.StringFilter<"Agendamento"> | string
   duracao?: Prisma.IntFilter<"Agendamento"> | number
   status?: Prisma.EnumAgendamentoStatusFilter<"Agendamento"> | $Enums.AgendamentoStatus
+  valor?: Prisma.FloatNullableFilter<"Agendamento"> | number | null
   observacao?: Prisma.StringNullableFilter<"Agendamento"> | string | null
   createdAt?: Prisma.DateTimeFilter<"Agendamento"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"Agendamento"> | Date | string
@@ -701,6 +740,7 @@ export type AgendamentoCreateWithoutProfessorInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -716,6 +756,7 @@ export type AgendamentoUncheckedCreateWithoutProfessorInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -752,6 +793,7 @@ export type AgendamentoCreateWithoutAlunoInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -767,6 +809,7 @@ export type AgendamentoUncheckedCreateWithoutAlunoInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -805,6 +848,7 @@ export type AgendamentoCreateManySalaInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -816,6 +860,7 @@ export type AgendamentoUpdateWithoutSalaInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -831,6 +876,7 @@ export type AgendamentoUncheckedUpdateWithoutSalaInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -844,6 +890,7 @@ export type AgendamentoUncheckedUpdateManyWithoutSalaInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -857,6 +904,7 @@ export type AgendamentoCreateManyProfessorInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -868,6 +916,7 @@ export type AgendamentoUpdateWithoutProfessorInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -883,6 +932,7 @@ export type AgendamentoUncheckedUpdateWithoutProfessorInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -896,6 +946,7 @@ export type AgendamentoUncheckedUpdateManyWithoutProfessorInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -909,6 +960,7 @@ export type AgendamentoCreateManyAlunoInput = {
   horario: string
   duracao: number
   status?: $Enums.AgendamentoStatus
+  valor?: number | null
   observacao?: string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -920,6 +972,7 @@ export type AgendamentoUpdateWithoutAlunoInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -935,6 +988,7 @@ export type AgendamentoUncheckedUpdateWithoutAlunoInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -948,6 +1002,7 @@ export type AgendamentoUncheckedUpdateManyWithoutAlunoInput = {
   horario?: Prisma.StringFieldUpdateOperationsInput | string
   duracao?: Prisma.IntFieldUpdateOperationsInput | number
   status?: Prisma.EnumAgendamentoStatusFieldUpdateOperationsInput | $Enums.AgendamentoStatus
+  valor?: Prisma.NullableFloatFieldUpdateOperationsInput | number | null
   observacao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -964,6 +1019,7 @@ export type AgendamentoSelect<ExtArgs extends runtime.Types.Extensions.InternalA
   horario?: boolean
   duracao?: boolean
   status?: boolean
+  valor?: boolean
   observacao?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -981,6 +1037,7 @@ export type AgendamentoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.E
   horario?: boolean
   duracao?: boolean
   status?: boolean
+  valor?: boolean
   observacao?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -998,6 +1055,7 @@ export type AgendamentoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.E
   horario?: boolean
   duracao?: boolean
   status?: boolean
+  valor?: boolean
   observacao?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1015,12 +1073,13 @@ export type AgendamentoSelectScalar = {
   horario?: boolean
   duracao?: boolean
   status?: boolean
+  valor?: boolean
   observacao?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type AgendamentoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "professorId" | "alunoId" | "salaId" | "data" | "horario" | "duracao" | "status" | "observacao" | "createdAt" | "updatedAt", ExtArgs["result"]["agendamento"]>
+export type AgendamentoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "professorId" | "alunoId" | "salaId" | "data" | "horario" | "duracao" | "status" | "valor" | "observacao" | "createdAt" | "updatedAt", ExtArgs["result"]["agendamento"]>
 export type AgendamentoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   professor?: boolean | Prisma.ProfessorDefaultArgs<ExtArgs>
   aluno?: boolean | Prisma.AlunoDefaultArgs<ExtArgs>
@@ -1053,6 +1112,7 @@ export type $AgendamentoPayload<ExtArgs extends runtime.Types.Extensions.Interna
     horario: string
     duracao: number
     status: $Enums.AgendamentoStatus
+    valor: number | null
     observacao: string | null
     createdAt: Date
     updatedAt: Date
@@ -1490,6 +1550,7 @@ export interface AgendamentoFieldRefs {
   readonly horario: Prisma.FieldRef<"Agendamento", 'String'>
   readonly duracao: Prisma.FieldRef<"Agendamento", 'Int'>
   readonly status: Prisma.FieldRef<"Agendamento", 'AgendamentoStatus'>
+  readonly valor: Prisma.FieldRef<"Agendamento", 'Float'>
   readonly observacao: Prisma.FieldRef<"Agendamento", 'String'>
   readonly createdAt: Prisma.FieldRef<"Agendamento", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"Agendamento", 'DateTime'>

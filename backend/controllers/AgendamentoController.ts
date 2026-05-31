@@ -133,7 +133,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
 
   router.post("/", authMiddleware, async (req, res) => {
     try {
-      const { professorId, alunoId, salaId, data, horario, duracao, observacao } = req.body;
+      const { professorId, alunoId, salaId, data, horario, duracao, valor, observacao } = req.body;
 
       const conflitos = await verificarConflitos({
         professorId,
@@ -155,6 +155,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
           data: new Date(data),
           horario,
           duracao: Number(duracao),
+          valor: valor !== undefined ? Number(valor) : null,
           observacao,
         },
         include,
@@ -169,7 +170,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
   router.put("/:id", authMiddleware, async (req, res) => {
     const id = req.params.id as string;
     try {
-      const { professorId, alunoId, salaId, data, horario, duracao, status, observacao } = req.body;
+      const { professorId, alunoId, salaId, data, horario, duracao, valor, status, observacao } = req.body;
 
       const atual = await prisma.agendamento.findUnique({ where: { id } });
       if (!atual) return res.status(404).json(notFound());
@@ -198,6 +199,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
           data: data ? new Date(data) : undefined,
           horario,
           duracao: duracao !== undefined ? Number(duracao) : undefined,
+          valor: valor !== undefined ? Number(valor) : undefined,
           status,
           observacao,
         } as any,

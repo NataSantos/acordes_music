@@ -27,7 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -48,6 +48,7 @@ type Agendamento = {
   horario: string;
   duracao: number;
   status: "AGENDADO" | "CONCLUIDO";
+  valor?: number | null;
   observacao?: string | null;
   createdAt: string;
   professor: Professor;
@@ -55,7 +56,25 @@ type Agendamento = {
   sala: Sala;
 };
 
-type Section = "salas" | "professores" | "alunos" | "agendamentos";
+type GanhosResumo = {
+  totalBruto: number;
+  totalAulas: number;
+  totalHoras: number;
+  mediaPorAula: number;
+  periodo: { de: string | null; ate: string | null };
+};
+
+type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number };
+type GanhosMes = { mes: string; aulas: number; valor: number };
+
+type GanhosData = {
+  resumo: GanhosResumo;
+  porProfessor: GanhosProfessor[];
+  porMes: GanhosMes[];
+  aulas: Agendamento[];
+};
+
+type Section = "salas" | "professores" | "alunos" | "agendamentos" | "financeiro";
 
 const backendUrl = import.meta.env.VITE_API_URL ?? `http://${location.hostname}:3000`;
 
@@ -74,12 +93,13 @@ const tabs: { value: Section; label: string; icon: React.ComponentType<{ classNa
   { value: "professores", label: "Professores", icon: GraduationCap },
   { value: "alunos", label: "Alunos", icon: BookUser },
   { value: "agendamentos", label: "Agendamentos", icon: CalendarDays },
+  { value: "financeiro", label: "Financeiro", icon: Wallet },
 ];
 
 function App() {
   const [section, setSection] = useState<Section>(() => {
     const hash = location.hash.replace("#", "") as Section;
-    return ["salas", "professores", "alunos", "agendamentos"].includes(hash) ? hash : "agendamentos";
+    return ["salas", "professores", "alunos", "agendamentos", "financeiro"].includes(hash) ? hash : "agendamentos";
   });
   const [salas, setSalas] = useState<Sala[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
@@ -103,7 +123,7 @@ function App() {
     nome: "", descricao: "", capacidade: "",
     cpf: "", email: "", telefone: "", profissao: "", matricula: "",
     professorId: "", alunoId: "", salaId: "",
-    data: "", horario: "", duracao: "60", observacao: "",
+    data: "", horario: "", duracao: "60", valor: "", observacao: "",
   });
   const [repetirSemanal, setRepetirSemanal] = useState(false);
   const [repetirSemanas, setRepetirSemanas] = useState(4);
@@ -120,6 +140,29 @@ function App() {
   const [perfilDialogOpen, setPerfilDialogOpen] = useState(false);
   const [perfilForm, setPerfilForm] = useState({ nome: "", email: "", telefone: "" });
   const [perfilLoading, setPerfilLoading] = useState(false);
+  const [ganhos, setGanhos] = useState<GanhosData | null>(null);
+  const [filtroDataInicio, setFiltroDataInicio] = useState(() => {
+    const d = new Date(); d.setMonth(d.getMonth() - 1);
+    return d.toISOString().slice(0, 10);
+  });
+  const [filtroDataFim, setFiltroDataFim] = useState(() => new Date().toISOString().slice(0, 10));
+  const [ganhosLoading, setGanhosLoading] = useState(false);
+
+  useEffect(() => {
+    if (section !== "financeiro" || !user) return;
+    (async () => {
+      setGanhosLoading(true);
+      try {
+        const params = new URLSearchParams({ dataInicio: filtroDataInicio, dataFim: filtroDataFim });
+        const res = await apiFetch(`${backendUrl}/api/ganhos?${params}`);
+        if (res.ok) setGanhos(await res.json());
+      } catch (err) {
+        console.error("Erro ao carregar financeiro:", err);
+      } finally {
+        setGanhosLoading(false);
+      }
+    })();
+  }, [section, filtroDataInicio, filtroDataFim, user]);
 
   useEffect(() => {
     if (error) setErrorDialogOpen(true);
@@ -141,7 +184,7 @@ function App() {
   useEffect(() => {
     const onHashChange = () => {
       const hash = location.hash.replace("#", "") as Section;
-      if (["salas", "professores", "alunos", "agendamentos"].includes(hash)) {
+      if (["salas", "professores", "alunos", "agendamentos", "financeiro"].includes(hash)) {
         setSection(hash);
       }
     };
@@ -273,7 +316,7 @@ function App() {
       nome: "", descricao: "", capacidade: "",
       cpf: "", email: "", telefone: "", profissao: "", matricula: "",
       professorId: "", alunoId: "", salaId: "",
-      data: "", horario: "", duracao: "60", observacao: "",
+    data: "", horario: "", duracao: "60", valor: "", observacao: "",
     });
     setError(null);
   };
@@ -312,6 +355,7 @@ function App() {
         horario: a.horario,
         duracao: String(a.duracao),
         observacao: a.observacao ?? "",
+        valor: a.valor ? String(a.valor) : "",
       }));
       setSection("agendamentos");
     }
@@ -437,6 +481,7 @@ function App() {
         payload = {
           professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
           data: form.data, horario: form.horario, duracao: Number(form.duracao) || 60,
+          valor: form.valor ? Number(form.valor) : null,
           observacao: form.observacao || null,
         };
       }
@@ -679,7 +724,14 @@ function App() {
                                           <span className="text-muted-foreground text-[11px] block leading-tight">Aluno</span>
                                           <span className="font-medium truncate block">{a.aluno.usuario.nome}</span>
                                         </div>
-                                        <Badge className={statusBadge[a.status] + " shrink-0 self-center"}>{statusLabel[a.status]}</Badge>
+                                        <div className="flex items-center gap-2">
+                                          {a.valor != null && (
+                                            <span className="text-xs font-mono text-muted-foreground">
+                                              {a.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
+                                            </span>
+                                          )}
+                                          <Badge className={statusBadge[a.status] + " shrink-0 self-center"}>{statusLabel[a.status]}</Badge>
+                                        </div>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="sm" className="size-8 p-0 shrink-0 self-center">
@@ -784,6 +836,245 @@ function App() {
     );
   };
 
+  const renderFinanceiro = () => {
+    if (!ganhos) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <Wallet className="size-12 mb-4 text-muted-foreground/30" />
+          <p>Nenhum dado financeiro encontrado</p>
+        </div>
+      );
+    }
+
+    const fmtValor = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
+
+    const ocupacaoDiaria = ganhos.aulas.reduce<Record<string, typeof ganhos.aulas>>((acc, a) => {
+      const d = a.data.slice(0, 10);
+      if (!acc[d]) acc[d] = [];
+      acc[d].push(a);
+      return acc;
+    }, {});
+
+    const diasOrdenados = Object.keys(ocupacaoDiaria).sort().reverse();
+
+    const maxProfessorValor = Math.max(...ganhos.porProfessor.map(p => p.valor), 0);
+    const maxMesValor = Math.max(...ganhos.porMes.map(m => m.valor), 0);
+
+    const mesLabels: Record<string, string> = {
+      "01": "Jan", "02": "Fev", "03": "Mar", "04": "Abr",
+      "05": "Mai", "06": "Jun", "07": "Jul", "08": "Ago",
+      "09": "Set", "10": "Out", "11": "Nov", "12": "Dez",
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Resumo financeiro do período selecionado
+            </p>
+          </div>
+        </div>
+
+        <Card className="border-muted/50 shadow-sm">
+          <CardContent className="p-4">
+            <div className="flex items-end gap-3 flex-wrap">
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground font-medium">De</Label>
+                <Input type="date" value={filtroDataInicio} onChange={e => setFiltroDataInicio(e.target.value)} className="h-9 w-40 text-sm" />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground font-medium">Até</Label>
+                <Input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)} className="h-9 w-40 text-sm" />
+              </div>
+              <div className="flex items-center gap-1.5 pb-0.5 ml-1">
+                <Button variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground" onClick={() => {
+                  const d = new Date(); d.setMonth(d.getMonth() - 1);
+                  setFiltroDataInicio(d.toISOString().slice(0, 10));
+                  setFiltroDataFim(new Date().toISOString().slice(0, 10));
+                }}>30 dias</Button>
+                <Button variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground" onClick={() => {
+                  const d = new Date(); d.setMonth(d.getMonth() - 3);
+                  setFiltroDataInicio(d.toISOString().slice(0, 10));
+                  setFiltroDataFim(new Date().toISOString().slice(0, 10));
+                }}>3 meses</Button>
+                <Button variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground" onClick={() => {
+                  const d = new Date(); d.setFullYear(d.getFullYear() - 1);
+                  setFiltroDataInicio(d.toISOString().slice(0, 10));
+                  setFiltroDataFim(new Date().toISOString().slice(0, 10));
+                }}>1 ano</Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: "Receita Bruta", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-950/40", border: "border-l-emerald-500" },
+            { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-950/40", border: "border-l-blue-500", suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas" },
+            { label: "Horas Totais", value: `${ganhos.resumo.totalHoras}h`, icon: Clock, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-950/40", border: "border-l-amber-500" },
+            { label: "Média por Aula", value: fmtValor(ganhos.resumo.mediaPorAula), icon: TrendingUp, color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", border: "border-l-violet-500" },
+          ].map(card => (
+            <Card key={card.label} className={`border-l-4 ${card.border} shadow-sm`}>
+              <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
+                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{card.label}</CardTitle>
+                <div className={`size-8 rounded-lg ${card.bg} flex items-center justify-center`}>
+                  <card.icon className={`size-4 ${card.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent className="px-4 pb-4">
+                <p className="text-2xl font-bold tracking-tight">{card.value}</p>
+                {card.suffix && <p className="text-xs text-muted-foreground mt-0.5">{card.suffix}</p>}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <GraduationCap className="size-4 text-muted-foreground" />
+                Por Professor
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {ganhos.porProfessor.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 text-sm">Nenhum dado no período</p>
+              ) : (
+                <div className="divide-y">
+                  {ganhos.porProfessor.map(p => (
+                    <div key={p.id} className="px-4 py-3 space-y-1.5">
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="font-medium truncate">{p.nome}</span>
+                        <span className="font-mono text-sm font-semibold">{fmtValor(p.valor)}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                        <span>{p.aulas} aula{p.aulas !== 1 ? "s" : ""}</span>
+                        <span className="text-muted-foreground/30">·</span>
+                        <span>{p.horas}h</span>
+                        <span className="text-muted-foreground/30">·</span>
+                        <span>{maxProfessorValor > 0 ? Math.round((p.valor / maxProfessorValor) * 100) : 0}%</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all"
+                          style={{ width: `${maxProfessorValor > 0 ? (p.valor / maxProfessorValor) * 100 : 0}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-2">
+                <TrendingUp className="size-4 text-muted-foreground" />
+                Por Mês
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              {ganhos.porMes.length === 0 ? (
+                <p className="text-muted-foreground text-center py-8 text-sm">Nenhum dado no período</p>
+              ) : (
+                <div className="divide-y">
+                  {ganhos.porMes.map(m => {
+                    const [ano, mesNum] = m.mes.split("-");
+                    const mesLabel = mesLabels[mesNum] || mesNum;
+                    return (
+                      <div key={m.mes} className="px-4 py-3 space-y-1.5">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="font-medium">{mesLabel} {ano}</span>
+                          <span className="font-mono text-sm font-semibold">{fmtValor(m.valor)}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                          <span>{m.aulas} aula{m.aulas !== 1 ? "s" : ""}</span>
+                          <span>{maxMesValor > 0 ? Math.round((m.valor / maxMesValor) * 100) : 0}% do maior mês</span>
+                        </div>
+                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-primary/40 to-primary rounded-full transition-all"
+                            style={{ width: `${maxMesValor > 0 ? (m.valor / maxMesValor) * 100 : 0}%` }}
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="shadow-sm">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <CalendarClock className="size-4 text-muted-foreground" />
+              Ocupação Diária
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {diasOrdenados.length === 0 ? (
+              <p className="text-muted-foreground text-center py-8 text-sm">Nenhuma aula no período</p>
+            ) : (
+              <div className="space-y-3">
+                {diasOrdenados.map(dia => {
+                  const aulas = ocupacaoDiaria[dia];
+                  const totalDia = aulas.reduce((s, a) => s + (a.valor ?? 0), 0);
+                  const hoje = new Date().toISOString().slice(0, 10) === dia;
+                  return (
+                    <div key={dia} className={`rounded-xl border ${hoje ? "border-primary/40 bg-primary/[0.03]" : "border-border/60"} overflow-hidden`}>
+                      <div className={`px-4 py-2.5 flex items-center justify-between ${hoje ? "bg-primary/[0.06]" : "bg-muted/20"}`}>
+                        <div className="flex items-center gap-2.5">
+                          <div className={`size-2 rounded-full ${hoje ? "bg-primary" : "bg-muted-foreground/30"}`} />
+                          <span className="text-sm font-semibold">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}</span>
+                          <span className="text-sm text-muted-foreground">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                          {hoje && <Badge className="text-[10px] h-5 bg-primary text-primary-foreground">HOJE</Badge>}
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-muted-foreground">
+                            {aulas.length} aula{aulas.length !== 1 ? "s" : ""}
+                          </span>
+                          <span className="font-semibold font-mono">{fmtValor(totalDia)}</span>
+                        </div>
+                      </div>
+                      <div className="divide-x divide-border/40 grid grid-flow-col auto-cols-fr">
+                        {aulas.map(a => (
+                          <div key={a.id} className="px-3 py-2.5 space-y-1 text-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-mono font-semibold text-sm">{a.horario}</span>
+                              <span className="text-muted-foreground font-mono">{a.valor != null ? fmtValor(a.valor) : "—"}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <GraduationCap className="size-3 shrink-0" />
+                              <span className="truncate">{a.professor.usuario.nome}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <BookUser className="size-3 shrink-0" />
+                              <span className="truncate">{a.aluno.usuario.nome}</span>
+                            </div>
+                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                              <Building2 className="size-3 shrink-0" />
+                              <span className="truncate">{a.sala.nome}</span>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
+
   const renderFormFields = () => {
     if (section === "agendamentos") {
       return (
@@ -830,6 +1121,10 @@ function App() {
           <div className="space-y-2">
             <Label>Duração (min)</Label>
             <Input type="number" min={1} value={form.duracao} onChange={e => handleFormField("duracao", e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Valor (R$)</Label>
+            <Input type="number" step="0.01" min={0} value={form.valor} onChange={e => handleFormField("valor", e.target.value)} placeholder="0,00" />
           </div>
           <div className="space-y-2 col-span-2">
             <Label>Observação</Label>
@@ -1144,35 +1439,37 @@ function App() {
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <main className="flex-1 overflow-auto p-6">
-          <div className="max-w-7xl mx-auto space-y-4">
-            <Card>
-              <CardHeader className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle>
-                    {section === "salas" ? "Salas" :
-                     section === "professores" ? "Professores" :
-                     section === "alunos" ? "Alunos" : "Agendamentos"}
-                  </CardTitle>
-                  {(user?.role === "ADMIN" || section === "agendamentos") && (
-                    <Button size="sm" onClick={openCreate}>
-                      <Plus className="size-3.5" /> Novo
-                    </Button>
-                  )}
-                </div>
-                <div className="relative max-w-xs">
-                  <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                  <Input
-                    className="w-full h-9 pl-8 text-sm"
-                    placeholder={section === "salas" ? "Buscar por nome..." : section === "agendamentos" ? "Buscar por sala, professor, aluno..." : "Buscar por nome, email ou CPF..."}
-                    value={searchQuery}
-                    onChange={e => setSearchQuery(e.target.value)}
-                  />
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="overflow-x-auto">{renderTable()}</div>
-              </CardContent>
-            </Card>
+            <div className="max-w-7xl mx-auto space-y-4">
+              {section === "financeiro" ? renderFinanceiro() : (
+                <Card>
+                  <CardHeader className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <CardTitle>
+                        {section === "salas" ? "Salas" :
+                         section === "professores" ? "Professores" :
+                         section === "alunos" ? "Alunos" : "Agendamentos"}
+                      </CardTitle>
+                      {(user?.role === "ADMIN" || section === "agendamentos") && (
+                        <Button size="sm" onClick={openCreate}>
+                          <Plus className="size-3.5" /> Novo
+                        </Button>
+                      )}
+                    </div>
+                    <div className="relative max-w-xs">
+                      <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                      <Input
+                        className="w-full h-9 pl-8 text-sm"
+                        placeholder={section === "salas" ? "Buscar por nome..." : section === "agendamentos" ? "Buscar por sala, professor, aluno..." : "Buscar por nome, email ou CPF..."}
+                        value={searchQuery}
+                        onChange={e => setSearchQuery(e.target.value)}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="overflow-x-auto">{renderTable()}</div>
+                  </CardContent>
+                </Card>
+              )}
           </div>
         </main>
       </div>
