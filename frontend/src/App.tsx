@@ -596,7 +596,13 @@ function App() {
     if (section === "agendamentos") {
       const items = agendamentosFiltrados;
       if (items.length === 0) {
-        return <p className="text-muted-foreground text-center py-12">Nenhum agendamento encontrado</p>;
+        return (
+          <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+            <CalendarDays className="size-12 mb-4" />
+            <p className="text-sm font-medium text-muted-foreground/70">Nenhum agendamento encontrado</p>
+            <p className="text-xs text-muted-foreground/40 mt-1">Tente ajustar os filtros ou crie um novo agendamento</p>
+          </div>
+        );
       }
 
       const sorted = [...items].sort((a, b) => a.data.localeCompare(b.data) || a.horario.localeCompare(b.horario));
@@ -640,7 +646,7 @@ function App() {
       };
 
       return (
-        <div className="space-y-8">
+        <div className="space-y-6 p-5">
           {Object.entries(monthGroups).sort(([a], [b]) => a.localeCompare(b)).map(([monthKey, monthItems]) => {
             const [year, monthNum] = monthKey.split("-");
             const monthLabel = `${monthNames[monthNum] || monthNum} ${year}`;
@@ -656,14 +662,14 @@ function App() {
 
             return (
               <div key={monthKey}>
-                <div className="flex items-baseline gap-3 mb-6">
-                  <h2 className="text-2xl font-bold tracking-tight">{monthLabel}</h2>
+                <div className="flex items-baseline gap-3 mb-5">
+                  <h2 className="text-xl font-bold tracking-tight">{monthLabel}</h2>
                   <span className="text-sm text-muted-foreground">
                     {monthItems.length} aula{monthItems.length !== 1 ? "s" : ""}
                   </span>
                 </div>
 
-                <div className="space-y-4">
+                <div className="space-y-3">
                   {sortedWeeks.map(weekId => {
                     const weekItems = weekGroups[weekId];
 
@@ -677,52 +683,57 @@ function App() {
                     const sortedDays = Object.keys(dayGroups).sort();
 
                     return (
-                      <Card key={weekId}>
-                        <CardHeader className="py-3 px-5 bg-muted/30">
+                      <Card key={weekId} className="border-border/60 shadow-sm overflow-hidden">
+                        <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
+                        <CardHeader className="py-2.5 px-4 bg-muted/20 border-b border-border/40">
                           <div className="flex items-center justify-between">
-                            <CardTitle className="text-sm font-medium">
+                            <CardTitle className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-2">
+                              <CalendarDays className="size-3.5 text-muted-foreground/50" />
                               Semana de {fmtWeekRange(weekId)}
                             </CardTitle>
-                            <span className="text-xs text-muted-foreground">
-                              {weekItems.length} aula{weekItems.length !== 1 ? "s" : ""}
-                            </span>
+                            <div className="flex items-center gap-3">
+                              <span className="text-xs text-muted-foreground/60 tabular-nums">
+                                {weekItems.length} aula{weekItems.length !== 1 ? "s" : ""}
+                              </span>
+                            </div>
                           </div>
                         </CardHeader>
-                        <CardContent className="p-0 divide-y">
+                        <CardContent className="p-0 divide-y divide-border/40">
                           {sortedDays.map(dayKey => {
                             const dayItems = dayGroups[dayKey];
                             const hoje = new Date().toISOString().slice(0, 10) === dayKey;
 
                             return (
                               <div key={dayKey}>
-                                <div className={`px-5 py-2 text-xs font-medium uppercase tracking-wider flex items-center gap-2 ${hoje ? "bg-primary/10 text-primary" : "bg-muted/20 text-muted-foreground"}`}>
+                                <div className={`px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider flex items-center gap-2 ${hoje ? "bg-primary/[0.06] text-primary" : "bg-muted/10 text-muted-foreground"}`}>
+                                  <div className={`size-1.5 rounded-full ${hoje ? "bg-primary" : "bg-muted-foreground/30"}`} />
                                   <span>{fmtDay(dayKey)}</span>
-                                  {hoje && <span className="text-[10px] bg-primary text-primary-foreground px-1.5 py-0.5 rounded font-bold">HOJE</span>}
+                                  {hoje && <Badge className="text-[9px] h-4 px-1.5 bg-primary text-primary-foreground">HOJE</Badge>}
                                 </div>
-                                <div className="divide-y">
+                                <div className="divide-y divide-border/20">
                                   {dayItems.map(a => {
                                     const duracaoLabel = a.duracao !== 60 ? `${a.duracao}min` : "";
 
                                     return (
                                       <div
                                         key={a.id}
-                                        className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] gap-3 px-5 py-3 items-center text-sm hover:bg-muted/30 transition-colors"
+                                        className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] gap-3 px-4 py-2.5 items-center text-sm hover:bg-muted/20 transition-colors"
                                       >
-                                        <div className="flex items-center gap-1.5 min-w-[64px]">
+                                        <div className="flex items-center gap-1.5 min-w-[56px]">
                                           <span className="font-mono text-sm font-semibold">{a.horario}</span>
-                                          {duracaoLabel && <span className="text-muted-foreground text-xs">({duracaoLabel})</span>}
+                                          {duracaoLabel && <span className="text-muted-foreground text-[10px]">({duracaoLabel})</span>}
                                         </div>
                                         <div className="truncate min-w-0">
-                                          <span className="text-muted-foreground text-[11px] block leading-tight">Sala</span>
-                                          <span className="font-medium truncate block">{a.sala.nome}</span>
+                                          <span className="text-muted-foreground text-[10px] block leading-tight uppercase tracking-wider">Sala</span>
+                                          <span className="font-medium truncate block text-sm">{a.sala.nome}</span>
                                         </div>
                                         <div className="truncate min-w-0">
-                                          <span className="text-muted-foreground text-[11px] block leading-tight">Professor</span>
-                                          <span className="font-medium truncate block">{a.professor.usuario.nome}</span>
+                                          <span className="text-muted-foreground text-[10px] block leading-tight uppercase tracking-wider">Professor</span>
+                                          <span className="font-medium truncate block text-sm">{a.professor.usuario.nome}</span>
                                         </div>
                                         <div className="truncate min-w-0">
-                                          <span className="text-muted-foreground text-[11px] block leading-tight">Aluno</span>
-                                          <span className="font-medium truncate block">{a.aluno.usuario.nome}</span>
+                                          <span className="text-muted-foreground text-[10px] block leading-tight uppercase tracking-wider">Aluno</span>
+                                          <span className="font-medium truncate block text-sm">{a.aluno.usuario.nome}</span>
                                         </div>
                                         <div className="flex items-center gap-2">
                                           {a.valor != null && (
@@ -730,12 +741,12 @@ function App() {
                                               {a.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
                                             </span>
                                           )}
-                                          <Badge className={statusBadge[a.status] + " shrink-0 self-center"}>{statusLabel[a.status]}</Badge>
+                                          <Badge className={`${statusBadge[a.status]} text-[10px] px-2 py-0.5 shrink-0`}>{statusLabel[a.status]}</Badge>
                                         </div>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
-                                            <Button variant="ghost" size="sm" className="size-8 p-0 shrink-0 self-center">
-                                              <MoreHorizontal className="size-4" />
+                                            <Button variant="ghost" size="sm" className="size-7 p-0 shrink-0 self-center rounded-md hover:bg-muted/50">
+                                              <MoreHorizontal className="size-3.5" />
                                             </Button>
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="end">
@@ -781,58 +792,69 @@ function App() {
 
     const items = section === "salas" ? salasFiltradas : section === "professores" ? professoresFiltrados : alunosFiltrados;
     if (items.length === 0) {
-      return <p className="text-muted-foreground text-center py-12">Nenhum registro encontrado</p>;
+      return (
+        <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/50">
+          {section === "salas" ? <Building2 className="size-12 mb-4" /> :
+           section === "professores" ? <GraduationCap className="size-12 mb-4" /> :
+           <BookUser className="size-12 mb-4" />}
+          <p className="text-sm font-medium text-muted-foreground/70">Nenhum registro encontrado</p>
+          <p className="text-xs text-muted-foreground/40 mt-1">
+            {section === "salas" ? "Nenhuma sala cadastrada" :
+             section === "professores" ? "Nenhum professor cadastrado" :
+             "Nenhum aluno cadastrado"}
+          </p>
+        </div>
+      );
     }
 
     const podeEditar = user?.role === "ADMIN";
 
     return (
-      <Table>
-        <TableHeader>
-          <TableRow>
-            {section === "salas" ? (
-              <><TableHead>Nome</TableHead><TableHead>Capacidade</TableHead>{podeEditar && <TableHead className="w-32">Ações</TableHead>}</>
-            ) : (
-              <><TableHead>Nome</TableHead><TableHead>Email</TableHead>{podeEditar && <TableHead className="w-32">Ações</TableHead>}</>
-            )}
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {items.map(item => (
-            <TableRow key={item.id}>
-              {section === "salas" ? (
-                <><TableCell className="font-medium">{(item as Sala).nome}</TableCell><TableCell>{(item as Sala).capacidade}</TableCell></>
-              ) : section === "professores" ? (
-                <><TableCell className="font-medium">{(item as Professor).usuario.nome}</TableCell><TableCell>{(item as Professor).usuario.email}</TableCell></>
-              ) : (
-                <><TableCell className="font-medium">{(item as Aluno).usuario.nome}</TableCell><TableCell>{(item as Aluno).usuario.email}</TableCell></>
-              )}
-              {podeEditar && (
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="size-8 p-0">
-                        <MoreHorizontal className="size-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => openEdit(item)}>
-                        <Pencil className="size-3.5" /> Editar
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => openDeleteDialog(item.id, getItemLabel(item))}
-                        className="text-destructive"
-                      >
-                        <Trash2 className="size-3.5" /> Excluir
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </TableCell>
-              )}
+      <div className="overflow-x-auto">
+        <Table>
+          <TableHeader>
+            <TableRow className="border-b border-border/40 hover:bg-transparent">
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 pl-5">Nome</TableHead>
+              <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10">{section === "salas" ? "Capacidade" : "Email"}</TableHead>
+              {podeEditar && <TableHead className="w-20 text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 pr-5 text-right">Ações</TableHead>}
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
+          </TableHeader>
+          <TableBody>
+            {items.map((item, i) => (
+              <TableRow key={item.id} className="border-b border-border/20 hover:bg-muted/20 transition-colors group">
+                <TableCell className="py-3.5 pl-5">
+                  <span className="font-medium">{"nome" in item ? item.nome : (item as Professor | Aluno).usuario.nome}</span>
+                </TableCell>
+                <TableCell className="text-muted-foreground/70 py-3.5 text-sm">
+                  {section === "salas" ? (item as Sala).capacidade : (item as Professor | Aluno).usuario.email}
+                </TableCell>
+                {podeEditar && (
+                  <TableCell className="py-3.5 pr-5 text-right">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="size-7 p-0 rounded-md hover:bg-muted/50 transition-all">
+                          <MoreHorizontal className="size-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="min-w-32">
+                        <DropdownMenuItem onClick={() => openEdit(item)} className="text-xs gap-2 py-1.5">
+                          <Pencil className="size-3.5" /> Editar
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={() => openDeleteDialog(item.id, getItemLabel(item))}
+                          className="text-xs gap-2 text-destructive focus:text-destructive py-1.5"
+                        >
+                          <Trash2 className="size-3.5" /> Excluir
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                )}
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
     );
   };
 
@@ -868,7 +890,7 @@ function App() {
 
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between border-b border-border/40 pb-4">
           <div>
             <h1 className="text-2xl font-bold tracking-tight">Financeiro</h1>
             <p className="text-sm text-muted-foreground mt-1">
@@ -877,7 +899,7 @@ function App() {
           </div>
         </div>
 
-        <Card className="border-muted/50 shadow-sm">
+        <Card className="border-border/60 shadow-sm">
           <CardContent className="p-4">
             <div className="flex items-end gap-3 flex-wrap">
               <div className="space-y-1">
@@ -888,22 +910,17 @@ function App() {
                 <Label className="text-xs text-muted-foreground font-medium">Até</Label>
                 <Input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)} className="h-9 w-40 text-sm" />
               </div>
-              <div className="flex items-center gap-1.5 pb-0.5 ml-1">
-                <Button variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground" onClick={() => {
-                  const d = new Date(); d.setMonth(d.getMonth() - 1);
-                  setFiltroDataInicio(d.toISOString().slice(0, 10));
-                  setFiltroDataFim(new Date().toISOString().slice(0, 10));
-                }}>30 dias</Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground" onClick={() => {
-                  const d = new Date(); d.setMonth(d.getMonth() - 3);
-                  setFiltroDataInicio(d.toISOString().slice(0, 10));
-                  setFiltroDataFim(new Date().toISOString().slice(0, 10));
-                }}>3 meses</Button>
-                <Button variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground" onClick={() => {
-                  const d = new Date(); d.setFullYear(d.getFullYear() - 1);
-                  setFiltroDataInicio(d.toISOString().slice(0, 10));
-                  setFiltroDataFim(new Date().toISOString().slice(0, 10));
-                }}>1 ano</Button>
+              <div className="flex items-center gap-1 pb-0.5 ml-1">
+                {["30 dias", "3 meses", "1 ano"].map(label => (
+                  <Button key={label} variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all" onClick={() => {
+                    const d = new Date();
+                    if (label === "30 dias") d.setMonth(d.getMonth() - 1);
+                    else if (label === "3 meses") d.setMonth(d.getMonth() - 3);
+                    else d.setFullYear(d.getFullYear() - 1);
+                    setFiltroDataInicio(d.toISOString().slice(0, 10));
+                    setFiltroDataFim(new Date().toISOString().slice(0, 10));
+                  }}>{label}</Button>
+                ))}
               </div>
             </div>
           </CardContent>
@@ -911,55 +928,60 @@ function App() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Receita Bruta", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign, color: "text-emerald-600", bg: "bg-emerald-100 dark:bg-emerald-950/40", border: "border-l-emerald-500" },
-            { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, color: "text-blue-600", bg: "bg-blue-100 dark:bg-blue-950/40", border: "border-l-blue-500", suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas" },
-            { label: "Horas Totais", value: `${ganhos.resumo.totalHoras}h`, icon: Clock, color: "text-amber-600", bg: "bg-amber-100 dark:bg-amber-950/40", border: "border-l-amber-500" },
-            { label: "Média por Aula", value: fmtValor(ganhos.resumo.mediaPorAula), icon: TrendingUp, color: "text-violet-600", bg: "bg-violet-100 dark:bg-violet-950/40", border: "border-l-violet-500" },
+            { label: "Receita Bruta", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign },
+            { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas" },
+            { label: "Horas Totais", value: `${ganhos.resumo.totalHoras}h`, icon: Clock },
+            { label: "Média por Aula", value: fmtValor(ganhos.resumo.mediaPorAula), icon: TrendingUp },
           ].map(card => (
-            <Card key={card.label} className={`border-l-4 ${card.border} shadow-sm`}>
+            <Card key={card.label} className="shadow-sm border-border/60 overflow-hidden">
+              <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
               <CardHeader className="flex flex-row items-center justify-between pb-2 pt-4 px-4">
-                <CardTitle className="text-xs font-medium text-muted-foreground uppercase tracking-wider">{card.label}</CardTitle>
-                <div className={`size-8 rounded-lg ${card.bg} flex items-center justify-center`}>
-                  <card.icon className={`size-4 ${card.color}`} />
+                <CardTitle className="text-[11px] font-medium text-muted-foreground uppercase tracking-widest">{card.label}</CardTitle>
+                <div className="size-8 rounded-lg bg-muted/50 flex items-center justify-center border border-border/40">
+                  <card.icon className="size-4 text-muted-foreground/70" />
                 </div>
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-2xl font-bold tracking-tight">{card.value}</p>
-                {card.suffix && <p className="text-xs text-muted-foreground mt-0.5">{card.suffix}</p>}
+                {card.suffix && <p className="text-xs text-muted-foreground/60 mt-0.5">{card.suffix}</p>}
               </CardContent>
             </Card>
           ))}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-border/60 overflow-hidden">
+            <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <GraduationCap className="size-4 text-muted-foreground" />
-                Por Professor
+              <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                <GraduationCap className="size-4" />
+                <span className="font-semibold uppercase tracking-wider">Por Professor</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {ganhos.porProfessor.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8 text-sm">Nenhum dado no período</p>
+                <div className="flex flex-col items-center py-10 text-muted-foreground/50">
+                  <GraduationCap className="size-8 mb-2" />
+                  <p className="text-sm">Nenhum dado no período</p>
+                </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-border/40">
                   {ganhos.porProfessor.map(p => (
-                    <div key={p.id} className="px-4 py-3 space-y-1.5">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="font-medium truncate">{p.nome}</span>
-                        <span className="font-mono text-sm font-semibold">{fmtValor(p.valor)}</span>
+                    <div key={p.id} className="px-4 py-3.5 space-y-2 hover:bg-muted/20 transition-colors">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-medium truncate">{p.nome}</span>
+                        <span className="font-mono text-sm font-semibold tabular-nums">{fmtValor(p.valor)}</span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                      <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
                         <span>{p.aulas} aula{p.aulas !== 1 ? "s" : ""}</span>
-                        <span className="text-muted-foreground/30">·</span>
+                        <span className="text-muted-foreground/20">/</span>
                         <span>{p.horas}h</span>
-                        <span className="text-muted-foreground/30">·</span>
-                        <span>{maxProfessorValor > 0 ? Math.round((p.valor / maxProfessorValor) * 100) : 0}%</span>
+                        <span className="text-muted-foreground/20">/</span>
+                        <span>{maxProfessorValor > 0 ? Math.round((p.valor / maxProfessorValor) * 100) : 0}% do total</span>
                       </div>
-                      <div className="h-1.5 w-full bg-muted rounded-full overflow-hidden">
+                      <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
                         <div
-                          className="h-full bg-gradient-to-r from-primary/60 to-primary rounded-full transition-all"
+                          className="h-full bg-muted-foreground/20 rounded-full transition-all duration-500"
                           style={{ width: `${maxProfessorValor > 0 ? (p.valor / maxProfessorValor) * 100 : 0}%` }}
                         />
                       </div>
@@ -970,34 +992,38 @@ function App() {
             </CardContent>
           </Card>
 
-          <Card className="shadow-sm">
+          <Card className="shadow-sm border-border/60 overflow-hidden">
+            <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
             <CardHeader className="pb-3">
-              <CardTitle className="text-base flex items-center gap-2">
-                <TrendingUp className="size-4 text-muted-foreground" />
-                Por Mês
+              <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                <TrendingUp className="size-4" />
+                <span className="font-semibold uppercase tracking-wider">Por Mês</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-0">
               {ganhos.porMes.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8 text-sm">Nenhum dado no período</p>
+                <div className="flex flex-col items-center py-10 text-muted-foreground/50">
+                  <TrendingUp className="size-8 mb-2" />
+                  <p className="text-sm">Nenhum dado no período</p>
+                </div>
               ) : (
-                <div className="divide-y">
+                <div className="divide-y divide-border/40">
                   {ganhos.porMes.map(m => {
                     const [ano, mesNum] = m.mes.split("-");
                     const mesLabel = mesLabels[mesNum] || mesNum;
                     return (
-                      <div key={m.mes} className="px-4 py-3 space-y-1.5">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="font-medium">{mesLabel} {ano}</span>
-                          <span className="font-mono text-sm font-semibold">{fmtValor(m.valor)}</span>
+                      <div key={m.mes} className="px-4 py-3.5 space-y-2 hover:bg-muted/20 transition-colors">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">{mesLabel} <span className="text-muted-foreground/50">{ano}</span></span>
+                          <span className="font-mono text-sm font-semibold tabular-nums">{fmtValor(m.valor)}</span>
                         </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground">
+                        <div className="flex items-center justify-between text-xs text-muted-foreground/60">
                           <span>{m.aulas} aula{m.aulas !== 1 ? "s" : ""}</span>
-                          <span>{maxMesValor > 0 ? Math.round((m.valor / maxMesValor) * 100) : 0}% do maior mês</span>
+                          <span className="tabular-nums">{maxMesValor > 0 ? Math.round((m.valor / maxMesValor) * 100) : 0}% do maior mês</span>
                         </div>
-                        <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                        <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
                           <div
-                            className="h-full bg-gradient-to-r from-primary/40 to-primary rounded-full transition-all"
+                            className="h-full bg-muted-foreground/20 rounded-full transition-all duration-500"
                             style={{ width: `${maxMesValor > 0 ? (m.valor / maxMesValor) * 100 : 0}%` }}
                           />
                         </div>
@@ -1010,16 +1036,20 @@ function App() {
           </Card>
         </div>
 
-        <Card className="shadow-sm">
+        <Card className="shadow-sm border-border/60 overflow-hidden">
+          <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
           <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <CalendarClock className="size-4 text-muted-foreground" />
-              Ocupação Diária
+            <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+              <CalendarClock className="size-4" />
+              <span className="font-semibold uppercase tracking-wider">Ocupação Diária</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
             {diasOrdenados.length === 0 ? (
-              <p className="text-muted-foreground text-center py-8 text-sm">Nenhuma aula no período</p>
+              <div className="flex flex-col items-center py-10 text-muted-foreground/50">
+                <CalendarDays className="size-8 mb-2" />
+                <p className="text-sm">Nenhuma aula no período</p>
+              </div>
             ) : (
               <div className="space-y-3">
                 {diasOrdenados.map(dia => {
@@ -1027,37 +1057,41 @@ function App() {
                   const totalDia = aulas.reduce((s, a) => s + (a.valor ?? 0), 0);
                   const hoje = new Date().toISOString().slice(0, 10) === dia;
                   return (
-                    <div key={dia} className={`rounded-xl border ${hoje ? "border-primary/40 bg-primary/[0.03]" : "border-border/60"} overflow-hidden`}>
-                      <div className={`px-4 py-2.5 flex items-center justify-between ${hoje ? "bg-primary/[0.06]" : "bg-muted/20"}`}>
+                    <div key={dia} className={`rounded-xl border ${hoje ? "border-foreground/20 bg-muted/5" : "border-border/50"} overflow-hidden transition-all`}>
+                      <div className={`px-4 py-2.5 flex items-center justify-between ${hoje ? "bg-muted/20" : "bg-muted/10"}`}>
                         <div className="flex items-center gap-2.5">
-                          <div className={`size-2 rounded-full ${hoje ? "bg-primary" : "bg-muted-foreground/30"}`} />
-                          <span className="text-sm font-semibold">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}</span>
-                          <span className="text-sm text-muted-foreground">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                          {hoje && <Badge className="text-[10px] h-5 bg-primary text-primary-foreground">HOJE</Badge>}
+                          <div className={`size-2 rounded-full ${hoje ? "bg-foreground" : "bg-muted-foreground/20"}`} />
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-semibold capitalize">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}</span>
+                            <span className="text-sm text-muted-foreground/60">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR")}</span>
+                          </div>
+                          {hoje && (
+                            <div className="text-[10px] font-semibold uppercase tracking-wider bg-foreground text-background px-1.5 py-0.5 rounded">Hoje</div>
+                          )}
                         </div>
                         <div className="flex items-center gap-4 text-sm">
-                          <span className="text-muted-foreground">
+                          <span className="text-muted-foreground/60">
                             {aulas.length} aula{aulas.length !== 1 ? "s" : ""}
                           </span>
-                          <span className="font-semibold font-mono">{fmtValor(totalDia)}</span>
+                          <span className="font-semibold font-mono tabular-nums">{fmtValor(totalDia)}</span>
                         </div>
                       </div>
-                      <div className="divide-x divide-border/40 grid grid-flow-col auto-cols-fr">
+                      <div className="divide-x divide-border/30 grid grid-flow-col auto-cols-fr">
                         {aulas.map(a => (
-                          <div key={a.id} className="px-3 py-2.5 space-y-1 text-xs">
+                          <div key={a.id} className="px-3 py-3 space-y-1.5 text-xs hover:bg-muted/10 transition-colors">
                             <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono font-semibold text-sm">{a.horario}</span>
-                              <span className="text-muted-foreground font-mono">{a.valor != null ? fmtValor(a.valor) : "—"}</span>
+                              <span className="font-mono font-semibold text-sm tabular-nums">{a.horario}</span>
+                              <span className="text-muted-foreground/50 font-mono text-[11px]">{a.valor != null ? fmtValor(a.valor) : "—"}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
                               <GraduationCap className="size-3 shrink-0" />
                               <span className="truncate">{a.professor.usuario.nome}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
                               <BookUser className="size-3 shrink-0" />
                               <span className="truncate">{a.aluno.usuario.nome}</span>
                             </div>
-                            <div className="flex items-center gap-1.5 text-muted-foreground">
+                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
                               <Building2 className="size-3 shrink-0" />
                               <span className="truncate">{a.sala.nome}</span>
                             </div>
@@ -1158,9 +1192,9 @@ function App() {
             </div>
           )}
           {conflitos.length > 0 && (
-            <div className="col-span-2 bg-red-50 border border-red-200 rounded-md p-3 text-sm text-red-700">
-              <p className="font-semibold mb-1">Conflito de horário:</p>
-              <ul className="list-disc pl-4 space-y-0.5">{conflitos.map((c, i) => <li key={i}>{c}</li>)}</ul>
+            <div className="col-span-2 bg-destructive/5 border border-destructive/20 rounded-lg p-3 text-sm text-destructive">
+              <p className="font-semibold mb-1.5 flex items-center gap-1.5"><AlertTriangle className="size-3.5" /> Conflito de horário:</p>
+              <ul className="list-disc pl-5 space-y-0.5 text-destructive/80">{conflitos.map((c, i) => <li key={i}>{c}</li>)}</ul>
             </div>
           )}
           {verificandoConflito && (
@@ -1224,46 +1258,58 @@ function App() {
 
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-neutral-950">
-        <div className="w-full max-w-sm mx-auto p-8">
-          <div className="flex flex-col items-center gap-2 mb-8">
-            <Music className="size-10 text-white" />
-            <h1 className="text-2xl font-bold text-white tracking-tight">Acordes Music</h1>
-            <p className="text-sm text-white/50">Faça login para continuar</p>
-          </div>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label className="text-white/70 text-xs uppercase tracking-wider">Email</Label>
-              <Input
-                type="email"
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10"
-                placeholder="Digite seu email"
-                value={loginEmail}
-                onChange={e => setLoginEmail(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleLogin()}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label className="text-white/70 text-xs uppercase tracking-wider">Senha</Label>
-              <Input
-                type="password"
-                className="bg-white/5 border-white/10 text-white placeholder:text-white/30 h-10"
-                placeholder="Digite sua senha"
-                value={loginSenha}
-                onChange={e => setLoginSenha(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleLogin()}
-              />
-            </div>
-            {loginError && (
-              <div className="flex items-center gap-2 text-sm text-red-400 bg-red-400/10 rounded-md px-3 py-2">
-                <AlertTriangle className="size-4 shrink-0" />
-                <span>{loginError}</span>
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 relative overflow-hidden">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800/20 via-transparent to-transparent" />
+        <div className="w-full max-w-sm mx-auto p-8 relative">
+          <Card className="border-neutral-800/50 bg-neutral-900/60 backdrop-blur-xl shadow-2xl">
+            <CardContent className="p-8">
+              <div className="flex flex-col items-center gap-3 mb-8">
+                <div className="size-14 rounded-2xl bg-gradient-to-br from-neutral-700 to-neutral-800 flex items-center justify-center shadow-lg">
+                  <Music className="size-7 text-white" />
+                </div>
+                <div className="text-center">
+                  <h1 className="text-xl font-bold text-white tracking-tight">Acordes Music</h1>
+                  <p className="text-sm text-white/50 mt-0.5">Faça login para continuar</p>
+                </div>
               </div>
-            )}
-            <Button className="w-full h-10" onClick={handleLogin} disabled={loginLoading}>
-              {loginLoading ? "Entrando..." : "Entrar"}
-            </Button>
-          </div>
+              <div className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label className="text-white/60 text-xs font-medium uppercase tracking-wider">Email</Label>
+                  <Input
+                    type="email"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/25 h-10 focus-visible:ring-white/20 focus-visible:border-white/30 transition-all"
+                    placeholder="Digite seu email"
+                    value={loginEmail}
+                    onChange={e => setLoginEmail(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleLogin()}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label className="text-white/60 text-xs font-medium uppercase tracking-wider">Senha</Label>
+                  <Input
+                    type="password"
+                    className="bg-white/5 border-white/10 text-white placeholder:text-white/25 h-10 focus-visible:ring-white/20 focus-visible:border-white/30 transition-all"
+                    placeholder="Digite sua senha"
+                    value={loginSenha}
+                    onChange={e => setLoginSenha(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleLogin()}
+                  />
+                </div>
+                {loginError && (
+                  <div className="flex items-center gap-2 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2.5">
+                    <AlertTriangle className="size-4 shrink-0" />
+                    <span>{loginError}</span>
+                  </div>
+                )}
+                <Button className="w-full h-10 bg-white text-black hover:bg-white/90 hover:shadow-lg transition-all font-medium" onClick={handleLogin} disabled={loginLoading}>
+                  {loginLoading ? (
+                    <span className="flex items-center gap-2"><span className="size-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> Entrando...</span>
+                  ) : "Entrar"}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+          <p className="text-center text-xs text-white/20 mt-6">Sistema de Gestão de Escolas de Música</p>
         </div>
       </div>
     );
@@ -1271,10 +1317,10 @@ function App() {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center">
-        <div className="flex items-center gap-3 text-muted-foreground">
-          <span className="size-5 border-2 border-muted-foreground border-t-transparent rounded-full animate-spin inline-block" />
-          Carregando...
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-muted/20">
+        <div className="flex flex-col items-center gap-3 text-muted-foreground">
+          <span className="size-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin" />
+          <span className="text-sm">Carregando...</span>
         </div>
       </div>
     );
@@ -1282,49 +1328,90 @@ function App() {
 
   return (
     <div className="h-screen flex">
-      <aside className={`${sidebarCollapsed ? "w-16" : "w-60"} transition-all duration-300 bg-neutral-950 text-white flex flex-col shrink-0 ${sidebarCollapsed ? "overflow-hidden" : ""}`}>
-        <div className={`h-14 border-b border-white/10 flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-4"}`}>
-          <Music className="size-5 shrink-0" />
-          {!sidebarCollapsed && <span className="font-bold tracking-tight truncate">Acordes Music</span>}
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-60"} transition-all duration-300 bg-neutral-950 text-white flex flex-col shrink-0 ${sidebarCollapsed ? "overflow-hidden" : ""} relative`}>
+        <div className={`absolute inset-0 bg-gradient-to-b from-neutral-950 via-neutral-950 to-neutral-900/80 pointer-events-none`} />
+        <div className={`h-14 border-b border-white/[0.06] flex items-center gap-2.5 ${sidebarCollapsed ? "justify-center px-0" : "px-3"} relative z-10`}>
+          <div className="size-8 rounded-xl bg-gradient-to-br from-neutral-600 to-neutral-800 flex items-center justify-center shrink-0">
+            <Music className="size-4 text-white" />
+          </div>
+          {!sidebarCollapsed && (
+            <div className="flex flex-col min-w-0">
+              <span className="font-bold tracking-tight truncate text-sm leading-tight">Acordes Music</span>
+              <span className="text-[10px] text-white/30 font-medium tracking-wide">Sistema de Gestão</span>
+            </div>
+          )}
         </div>
-        <nav className={`flex-1 p-2 space-y-0.5 ${sidebarCollapsed ? "overflow-hidden" : "overflow-auto"}`}>
+        <nav className={`flex-1 p-2 space-y-0.5 ${sidebarCollapsed ? "overflow-hidden" : "overflow-auto"} relative z-10`}>
+          <div className="text-[10px] text-white/30 font-semibold uppercase tracking-widest px-2 pb-1.5 pt-1">
+            {!sidebarCollapsed && "Navegação"}
+          </div>
           {tabs.map(t => {
             const Icon = t.icon;
+            const isActive = section === t.value;
             return (
               <Button
                 key={t.value}
                 variant="ghost"
-                className={`w-full justify-start gap-3 h-9 px-2 text-sm font-normal text-white/80 hover:text-white hover:bg-white/10 ${section === t.value ? "bg-white/10 text-white" : ""}`}
+                className={`w-full justify-start gap-3 text-sm font-normal transition-all rounded-lg relative ${
+                  sidebarCollapsed ? "h-10 px-0 justify-center" : "h-9 px-3"
+                } ${
+                  isActive
+                    ? "text-white bg-white/[0.07]"
+                    : "text-white/40 hover:text-white hover:bg-white/[0.04]"
+                }`}
                 onClick={() => { setSection(t.value); setDialogOpen(false); }}
               >
-                <Icon className="size-4 shrink-0" />
-                {!sidebarCollapsed && t.label}
+                {isActive && !sidebarCollapsed && (
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-white/40" />
+                )}
+                <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-all ${
+                  isActive
+                    ? "bg-white/[0.08] text-white"
+                    : "text-white/40 group-hover:text-white"
+                }`}>
+                  <Icon className="size-4" />
+                </div>
+                {!sidebarCollapsed && (
+                  <div className="flex flex-col min-w-0 flex-1">
+                    <span className={`text-sm leading-tight ${isActive ? "font-medium" : ""}`}>{t.label}</span>
+                  </div>
+                )}
+                {isActive && !sidebarCollapsed && (
+                  <div className="size-1.5 rounded-full bg-white/40" />
+                )}
               </Button>
             );
           })}
         </nav>
         {section === "agendamentos" && !sidebarCollapsed && (
-          <div className="px-3 py-3 space-y-3 border-t border-white/10">
+          <div className="px-3 py-3 space-y-3 border-t border-white/[0.06] relative z-10">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="size-5 rounded-md bg-white/5 flex items-center justify-center">
+                <ListFilter className="size-3 text-white/40" />
+              </div>
+              <span className="text-[10px] text-white/40 font-semibold uppercase tracking-widest">Filtros</span>
+              {(filterStatus || filterSala) && (
+                <div className="ml-auto size-1.5 rounded-full bg-white/40 animate-pulse" />
+              )}
+            </div>
             <div className="space-y-2">
-              <span className="text-xs text-white/50 font-medium uppercase tracking-wider">Status</span>
               <div className="flex flex-wrap gap-1">
                 <button
-                  className={`text-xs px-2.5 py-1 rounded-md transition-colors ${!filterStatus ? "bg-white/20 text-white" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                  className={`text-xs px-2.5 py-1 rounded-md transition-all ${!filterStatus ? "bg-white/12 text-white shadow-xs" : "text-white/40 hover:text-white hover:bg-white/5"}`}
                   onClick={() => setFilterStatus("")}
                 >Todos</button>
                 {["AGENDADO", "CONCLUIDO"].map(s => (
                   <button
                     key={s}
-                    className={`text-xs px-2.5 py-1 rounded-md transition-colors ${filterStatus === s ? "bg-white/20 text-white" : "text-white/60 hover:text-white hover:bg-white/10"}`}
+                    className={`text-xs px-2.5 py-1 rounded-md transition-all ${filterStatus === s ? "bg-white/12 text-white shadow-xs" : "text-white/40 hover:text-white hover:bg-white/5"}`}
                     onClick={() => setFilterStatus(s)}
                   >{statusLabel[s]}</button>
                 ))}
               </div>
             </div>
             <div className="space-y-1.5">
-              <span className="text-xs text-white/50 font-medium uppercase tracking-wider">Sala</span>
               <Select value={filterSala || "todas"} onValueChange={v => setFilterSala(v === "todas" ? "" : v)}>
-                <SelectTrigger className="w-full h-8 text-xs bg-white/5 border-white/10 text-white/80">
+                <SelectTrigger className="w-full h-8 text-xs bg-white/[0.03] border-white/[0.08] text-white/60 hover:bg-white/[0.06] hover:border-white/20 transition-all rounded-lg">
                   <SelectValue placeholder="Todas as salas" />
                 </SelectTrigger>
                 <SelectContent>
@@ -1338,64 +1425,24 @@ function App() {
           </div>
         )}
         {section === "agendamentos" && sidebarCollapsed && (
-          <div className="px-1 py-2 border-t border-white/10 flex justify-center">
+          <div className="px-1 py-2 border-t border-white/[0.06] flex justify-center relative z-10">
             <button
-              className="relative size-8 flex items-center justify-center rounded-md text-white/60 hover:text-white hover:bg-white/10 transition-colors"
+              className="relative size-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
               onClick={() => setSidebarCollapsed(false)}
               title="Filtros"
             >
               <ListFilter className="size-4" />
               {(filterStatus || filterSala) && (
-                <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-blue-400" />
+                <span className="absolute -top-0.5 -right-0.5 size-2 rounded-full bg-white/40 ring-2 ring-neutral-950" />
               )}
             </button>
           </div>
         )}
-        <div className="mt-auto border-t border-white/10">
-          {!sidebarCollapsed && (
-            <div className="px-3 py-2 border-b border-white/10">
-              <button
-                className="flex items-center gap-2 w-full text-xs text-white/60 hover:text-white transition-colors"
-                onClick={async () => {
-                  try {
-                    const res = await apiFetch(`${backendUrl}/api/auth/me`);
-                    if (res.ok) {
-                      const data = await res.json();
-                      setPerfilForm({ nome: data.nome, email: data.email, telefone: data.telefone ?? "" });
-                    } else {
-                      setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
-                    }
-                  } catch {
-                    setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
-                  }
-                  setPerfilDialogOpen(true);
-                }}
-              >
-                <User className="size-3.5" />
-                <span>Editar Perfil</span>
-              </button>
-            </div>
-          )}
-          <div className="p-2 flex gap-1 items-center">
+        <div className="mt-auto relative z-10">
+          <div className="px-3 py-3 border-t border-white/[0.06] bg-gradient-to-t from-neutral-950 via-neutral-950 to-transparent">
             {!sidebarCollapsed && (
-              <span className="flex-1 truncate text-xs text-white/50 px-1">{user?.nome}</span>
-            )}
-            {!sidebarCollapsed && user?.role === "PROFESSOR" && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
-                onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
-                title="Alterar senha"
-              >
-                <span className="text-[10px] font-medium">#</span>
-              </Button>
-            )}
-            {sidebarCollapsed && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
+              <button
+                className="flex items-center gap-3 w-full rounded-lg px-2 py-2 hover:bg-white/[0.04] transition-colors group"
                 onClick={async () => {
                   try {
                     const res = await apiFetch(`${backendUrl}/api/auth/me`);
@@ -1410,63 +1457,130 @@ function App() {
                   }
                   setPerfilDialogOpen(true);
                 }}
-                title="Editar Perfil"
               >
-                <User className="size-3.5" />
-              </Button>
+                <div className="size-8 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0">
+                  <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                </div>
+                <div className="flex flex-col min-w-0 flex-1 text-left">
+                  <span className="text-sm font-medium text-white/80 truncate group-hover:text-white transition-colors">{user?.nome}</span>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-white/30 capitalize">{user?.role?.toLowerCase() === "admin" ? "Administrador" : "Professor"}</span>
+                  </div>
+                </div>
+                <div className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                  user?.role === "ADMIN" ? "bg-white/15 text-white/80" : "bg-white/10 text-white/60"
+                }`}>
+                  {user?.role === "ADMIN" ? "Admin" : "Prof"}
+                </div>
+              </button>
             )}
-            <Button
-              variant="ghost"
-              size="sm"
-              className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
-              onClick={handleLogout}
-              title="Sair"
-            >
-              <LogOut className="size-3.5" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="size-8 p-0 text-white/60 hover:text-white hover:bg-white/10 shrink-0"
-              onClick={() => setSidebarCollapsed(p => !p)}
-              title={sidebarCollapsed ? "Expandir" : "Recolher"}
-            >
-              {sidebarCollapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
-            </Button>
+            <div className={`flex gap-1 items-center ${!sidebarCollapsed ? "mt-2" : ""}`}>
+              {sidebarCollapsed && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex-1 h-9 p-0 text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg"
+                  onClick={async () => {
+                    try {
+                      const res = await apiFetch(`${backendUrl}/api/auth/me`);
+                      if (res.ok) {
+                        const data = await res.json();
+                        setPerfilForm({ nome: data.nome, email: data.email, telefone: data.telefone ?? "" });
+                      } else {
+                        setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                      }
+                    } catch {
+                      setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                    }
+                    setPerfilDialogOpen(true);
+                  }}
+                  title="Editar Perfil"
+                >
+                  <User className="size-3.5" />
+                </Button>
+              )}
+              {!sidebarCollapsed && user?.role === "PROFESSOR" && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg gap-1.5"
+                  onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
+                  title="Alterar senha"
+                >
+                  <span className="text-xs font-bold">#</span>
+                  Senha
+                </Button>
+              )}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/[0.06] shrink-0 rounded-lg gap-1.5"
+                onClick={handleLogout}
+                title="Sair"
+              >
+                <LogOut className="size-3" />
+                {!sidebarCollapsed && "Sair"}
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-8 w-8 p-0 text-white/30 hover:text-white hover:bg-white/[0.06] shrink-0 rounded-lg ml-auto"
+                onClick={() => setSidebarCollapsed(p => !p)}
+                title={sidebarCollapsed ? "Expandir" : "Recolher"}
+              >
+                {sidebarCollapsed ? <PanelLeftOpen className="size-3.5" /> : <PanelLeftClose className="size-3.5" />}
+              </Button>
+            </div>
           </div>
         </div>
       </aside>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
         <main className="flex-1 overflow-auto p-6">
-            <div className="max-w-7xl mx-auto space-y-4">
+            <div className="max-w-7xl mx-auto space-y-6">
               {section === "financeiro" ? renderFinanceiro() : (
-                <Card>
-                  <CardHeader className="space-y-3">
+                <Card className="border-border/60 shadow-sm overflow-hidden">
+                  <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
+                  <CardHeader className="space-y-4 border-b border-border/40 bg-muted/10 pb-4">
                     <div className="flex items-center justify-between">
-                      <CardTitle>
-                        {section === "salas" ? "Salas" :
-                         section === "professores" ? "Professores" :
-                         section === "alunos" ? "Alunos" : "Agendamentos"}
-                      </CardTitle>
+                      <div className="flex items-center gap-3">
+                        <div className="size-10 rounded-xl bg-muted/50 border border-border/40 flex items-center justify-center">
+                          {(() => {
+                            const Icon = tabs.find(t => t.value === section)?.icon || Building2;
+                            return <Icon className="size-5 text-muted-foreground/70" />;
+                          })()}
+                        </div>
+                        <div>
+                          <CardTitle className="text-lg font-semibold">
+                            {section === "salas" ? "Salas" :
+                             section === "professores" ? "Professores" :
+                             section === "alunos" ? "Alunos" : "Agendamentos"}
+                          </CardTitle>
+                          <p className="text-xs text-muted-foreground/60 mt-0.5">
+                            {section === "salas" ? "Gerencie as salas de aula" :
+                             section === "professores" ? "Gerencie os professores" :
+                             section === "alunos" ? "Gerencie os alunos" : "Acompanhe os agendamentos"}
+                          </p>
+                        </div>
+                      </div>
                       {(user?.role === "ADMIN" || section === "agendamentos") && (
-                        <Button size="sm" onClick={openCreate}>
+                        <Button size="sm" onClick={openCreate} className="shadow-xs">
                           <Plus className="size-3.5" /> Novo
                         </Button>
                       )}
                     </div>
-                    <div className="relative max-w-xs">
-                      <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                    <div className="relative max-w-sm">
+                      <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
                       <Input
-                        className="w-full h-9 pl-8 text-sm"
+                        className="w-full h-9 pl-9 text-sm bg-background/80 border-border/50 focus-visible:bg-background transition-all"
                         placeholder={section === "salas" ? "Buscar por nome..." : section === "agendamentos" ? "Buscar por sala, professor, aluno..." : "Buscar por nome, email ou CPF..."}
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                       />
                     </div>
                   </CardHeader>
-                  <CardContent>
-                    <div className="overflow-x-auto">{renderTable()}</div>
+                  <CardContent className="p-0">
+                    {renderTable()}
                   </CardContent>
                 </Card>
               )}
@@ -1476,15 +1590,20 @@ function App() {
 
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>Confirmar exclusão</DialogTitle>
-            <DialogDescription>
-              Tem certeza que deseja excluir {deletingItem?.label}? Esta ação não pode ser desfeita.
-            </DialogDescription>
+          <DialogHeader className="flex flex-row items-start gap-3">
+            <div className="rounded-full bg-destructive/10 p-2 shrink-0 mt-0.5">
+              <AlertTriangle className="size-5 text-destructive" />
+            </div>
+            <div>
+              <DialogTitle>Confirmar exclusão</DialogTitle>
+              <DialogDescription className="mt-1">
+                Tem certeza que deseja excluir <strong>{deletingItem?.label}</strong>? Esta ação não pode ser desfeita.
+              </DialogDescription>
+            </div>
           </DialogHeader>
-          <DialogFooter>
+          <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>Cancelar</Button>
-            <Button variant="destructive" onClick={confirmDelete}>Excluir</Button>
+            <Button variant="destructive" onClick={confirmDelete} className="shadow-xs">Excluir</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1497,11 +1616,110 @@ function App() {
             </div>
             <div>
               <DialogTitle className="text-destructive">Erro</DialogTitle>
-              <DialogDescription className="text-sm mt-1 text-foreground/80">{error}</DialogDescription>
+              <DialogDescription className="mt-1">{error}</DialogDescription>
             </div>
           </DialogHeader>
           <DialogFooter>
-            <Button variant="default" onClick={() => { setErrorDialogOpen(false); setError(null); }}>OK</Button>
+            <Button variant="outline" onClick={() => { setErrorDialogOpen(false); setError(null); }}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={dialogOpen} onOpenChange={v => { setDialogOpen(v); if (!v) resetForm(); }}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                {section === "salas" ? <Building2 className="size-4.5 text-primary" /> :
+                 section === "professores" ? <GraduationCap className="size-4.5 text-primary" /> :
+                 section === "alunos" ? <BookUser className="size-4.5 text-primary" /> :
+                 <CalendarDays className="size-4.5 text-primary" />}
+              </div>
+              <div>
+                <DialogTitle>{editingId ? "Editar" : "Novo"} {section === "salas" ? "Sala" : section === "professores" ? "Professor" : section === "alunos" ? "Aluno" : "Agendamento"}</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+          {error && (
+            <div className="mx-6 flex items-center gap-2 text-sm text-destructive bg-destructive/5 border border-destructive/20 rounded-lg px-3 py-2">
+              <AlertTriangle className="size-4 shrink-0" />
+              <span>{error}</span>
+            </div>
+          )}
+          <div className="px-6 pb-6">{renderFormFields()}</div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
+            <Button onClick={handleSubmit} disabled={section === "agendamentos" && conflitos.length > 0} className="shadow-xs">
+              {editingId ? "Salvar" : "Criar"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={senhaDialogOpen} onOpenChange={v => { setSenhaDialogOpen(v); if (!v) setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <span className="text-sm font-bold text-primary">#</span>
+              </div>
+              <div>
+                <DialogTitle>Alterar senha</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-3 px-6 pb-6">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Senha atual</Label>
+              <Input type="password" value={senhaForm.senhaAtual} onChange={e => setSenhaForm(p => ({ ...p, senhaAtual: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Nova senha</Label>
+              <Input type="password" value={senhaForm.senhaNova} onChange={e => setSenhaForm(p => ({ ...p, senhaNova: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Confirmar nova senha</Label>
+              <Input type="password" value={senhaForm.confirmar} onChange={e => setSenhaForm(p => ({ ...p, confirmar: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setSenhaDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleAlterarSenha} className="shadow-xs">Alterar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={perfilDialogOpen} onOpenChange={v => { setPerfilDialogOpen(v); if (!v) setPerfilForm({ nome: "", email: "", telefone: "" }); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-primary/10 flex items-center justify-center">
+                <User className="size-4.5 text-primary" />
+              </div>
+              <div>
+                <DialogTitle>Editar Perfil</DialogTitle>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-3 px-6 pb-6">
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Nome</Label>
+              <Input value={perfilForm.nome} onChange={e => setPerfilForm(p => ({ ...p, nome: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Email</Label>
+              <Input type="email" value={perfilForm.email} onChange={e => setPerfilForm(p => ({ ...p, email: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs font-medium">Telefone</Label>
+              <Input value={perfilForm.telefone} onChange={e => setPerfilForm(p => ({ ...p, telefone: e.target.value }))} />
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setPerfilDialogOpen(false)}>Cancelar</Button>
+            <Button onClick={handleEditarPerfil} disabled={perfilLoading} className="shadow-xs">
+              {perfilLoading ? "Salvando..." : "Salvar"}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
