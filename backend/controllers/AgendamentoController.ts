@@ -1,5 +1,6 @@
 import { Router } from "express";
 import type { PrismaClient } from "../generated/client.js";
+import { authMiddleware } from "../middleware/auth.js";
 
 function timeToMin(t: string): number {
   const partes = t.split(":");
@@ -76,7 +77,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     return conflitos;
   }
 
-  router.get("/", async (req, res) => {
+  router.get("/", authMiddleware, async (req, res) => {
     try {
       const where: Record<string, unknown> = {};
       if (req.query.professorId) {
@@ -94,7 +95,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     }
   });
 
-  router.get("/verificar-conflito", async (req, res) => {
+  router.get("/verificar-conflito", authMiddleware, async (req, res) => {
     try {
       const { professorId, alunoId, salaId, data, horario, duracao, ignorarId } = req.query as Record<string, string>;
       if (!professorId || !alunoId || !salaId || !data || !horario || !duracao) {
@@ -116,10 +117,10 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     }
   });
 
-  router.get("/:id", async (req, res) => {
+  router.get("/:id", authMiddleware, async (req, res) => {
     try {
       const agendamento = await prisma.agendamento.findUnique({
-        where: { id: req.params.id },
+        where: { id: req.params.id as string },
         include,
       });
       if (!agendamento) return res.status(404).json(notFound());
@@ -130,7 +131,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     }
   });
 
-  router.post("/", async (req, res) => {
+  router.post("/", authMiddleware, async (req, res) => {
     try {
       const { professorId, alunoId, salaId, data, horario, duracao, observacao } = req.body;
 
@@ -165,19 +166,22 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     }
   });
 
-  router.put("/:id", async (req, res) => {
-    const { id } = req.params;
+  router.put("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       const { professorId, alunoId, salaId, data, horario, duracao, status, observacao } = req.body;
 
-      if (data && horario && duracao) {
+      const atual = await prisma.agendamento.findUnique({ where: { id } });
+      if (!atual) return res.status(404).json(notFound());
+
+      if (data || horario || duracao) {
         const conflitos = await verificarConflitos({
-          professorId,
-          alunoId,
-          salaId,
-          data,
-          horario,
-          duracao: Number(duracao),
+          professorId: professorId ?? atual.professorId,
+          alunoId: alunoId ?? atual.alunoId,
+          salaId: salaId ?? atual.salaId,
+          data: data ?? atual.data.toISOString().slice(0, 10),
+          horario: horario ?? atual.horario,
+          duracao: Number(duracao ?? atual.duracao),
           ignorarId: id,
         });
         if (conflitos.length > 0) {
@@ -206,8 +210,8 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     }
   });
 
-  router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
+  router.delete("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       await prisma.agendamento.delete({ where: { id } });
       return res.status(204).send();
@@ -217,8 +221,8 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
     }
   });
 
-  router.patch("/:id/registrar", async (req, res) => {
-    const { id } = req.params;
+  router.patch("/:id/registrar", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       const body = req.body || {};
       const observacao = body.observacao;

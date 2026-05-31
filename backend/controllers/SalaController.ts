@@ -1,12 +1,13 @@
 import { Router } from "express";
 import type { PrismaClient } from "../generated/client.js";
+import { authMiddleware } from "../middleware/auth.js";
 
 export default function SalaController(prisma: PrismaClient): Router {
   const router = Router();
 
   const notFound = () => ({ error: "Sala não encontrada" });
 
-  router.get("/", async (_req, res) => {
+  router.get("/", authMiddleware, async (_req, res) => {
     try {
       const salas = await prisma.sala.findMany({ orderBy: { nome: "asc" } });
       return res.json(salas);
@@ -16,7 +17,7 @@ export default function SalaController(prisma: PrismaClient): Router {
     }
   });
 
-  router.post("/", async (req, res) => {
+  router.post("/", authMiddleware, async (req, res) => {
     try {
       const { nome, capacidade, descricao } = req.body;
       const existente = await prisma.sala.findFirst({ where: { nome } });
@@ -33,11 +34,11 @@ export default function SalaController(prisma: PrismaClient): Router {
     }
   });
 
-  router.put("/:id", async (req, res) => {
-    const { id } = req.params;
+  router.put("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       const { nome } = req.body;
-      const existente = await prisma.sala.findFirst({ where: { nome, NOT: { id } } });
+      const existente = await prisma.sala.findFirst({ where: { nome, NOT: { id } as any } });
       if (existente) {
         return res.status(409).json({ error: `Já existe outra sala cadastrada com o nome "${nome}"` });
       }
@@ -56,8 +57,8 @@ export default function SalaController(prisma: PrismaClient): Router {
     }
   });
 
-  router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
+  router.delete("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       const agendamentos = await prisma.agendamento.count({ where: { salaId: id } });
       if (agendamentos > 0) {

@@ -1,13 +1,14 @@
 import { Router } from "express";
 import type { PrismaClient } from "../generated/client.js";
 import bcrypt from "bcryptjs";
+import { authMiddleware } from "../middleware/auth.js";
 
 export default function ProfessorController(prisma: PrismaClient): Router {
   const router = Router();
 
   const notFound = () => ({ error: "Professor não encontrado" });
 
-  router.get("/", async (_req, res) => {
+  router.get("/", authMiddleware, async (_req, res) => {
     try {
       const professores = await prisma.professor.findMany({
         orderBy: { createdAt: "desc" },
@@ -20,7 +21,7 @@ export default function ProfessorController(prisma: PrismaClient): Router {
     }
   });
 
-  router.post("/", async (req, res) => {
+  router.post("/", authMiddleware, async (req, res) => {
     try {
       const { cpf, nome, telefone, email, permissions, civil, endereco, profissao } = req.body;
       const existente = await prisma.usuario.findFirst({
@@ -28,7 +29,7 @@ export default function ProfessorController(prisma: PrismaClient): Router {
       });
       if (existente) {
         const motivo = existente.cpf === cpf ? "CPF" : "email";
-        return res.status(409).json({ error: `Já existe um professor cadastrado com este ${motivo}` });
+        return res.status(409).json({ error: `Já existe um usuário cadastrado com este ${motivo}` });
       }
       const senhaHash = await bcrypt.hash("1234", 10);
       const professor = await prisma.professor.create({
@@ -49,8 +50,8 @@ export default function ProfessorController(prisma: PrismaClient): Router {
     }
   });
 
-  router.put("/:id", async (req, res) => {
-    const { id } = req.params;
+  router.put("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       const { cpf, nome, telefone, email, permissions, civil, endereco, profissao } = req.body;
       const professor = await prisma.professor.findUnique({
@@ -66,7 +67,7 @@ export default function ProfessorController(prisma: PrismaClient): Router {
       });
       if (existente) {
         const motivo = existente.cpf === cpf ? "CPF" : "email";
-        return res.status(409).json({ error: `Já existe outro professor cadastrado com este ${motivo}` });
+        return res.status(409).json({ error: `Já existe outro usuário cadastrado com este ${motivo}` });
       }
       const atualizado = await prisma.professor.update({
         where: { id },
@@ -87,8 +88,8 @@ export default function ProfessorController(prisma: PrismaClient): Router {
     }
   });
 
-  router.delete("/:id", async (req, res) => {
-    const { id } = req.params;
+  router.delete("/:id", authMiddleware, async (req, res) => {
+    const id = req.params.id as string;
     try {
       const agendamentos = await prisma.agendamento.count({ where: { professorId: id } });
       if (agendamentos > 0) {

@@ -57,7 +57,7 @@ type Agendamento = {
 
 type Section = "salas" | "professores" | "alunos" | "agendamentos";
 
-const backendUrl = "http://localhost:3000";
+const backendUrl = import.meta.env.VITE_API_URL ?? `http://${location.hostname}:3000`;
 
 const statusLabel: Record<string, string> = {
   AGENDADO: "Agendado",
@@ -77,7 +77,10 @@ const tabs: { value: Section; label: string; icon: React.ComponentType<{ classNa
 ];
 
 function App() {
-  const [section, setSection] = useState<Section>("agendamentos");
+  const [section, setSection] = useState<Section>(() => {
+    const hash = location.hash.replace("#", "") as Section;
+    return ["salas", "professores", "alunos", "agendamentos"].includes(hash) ? hash : "agendamentos";
+  });
   const [salas, setSalas] = useState<Sala[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
   const [alunos, setAlunos] = useState<Aluno[]>([]);
@@ -104,7 +107,10 @@ function App() {
   });
   const [repetirSemanal, setRepetirSemanal] = useState(false);
   const [repetirSemanas, setRepetirSemanas] = useState(4);
-  const [user, setUser] = useState<{ nome: string; role: string; professorId: string | null; token: string; cpf: string } | null>(null);
+  const [user, setUser] = useState<{ nome: string; role: string; professorId: string | null; token: string; cpf: string } | null>(() => {
+    const saved = localStorage.getItem("user");
+    return saved ? JSON.parse(saved) : null;
+  });
   const [loginEmail, setLoginEmail] = useState("");
   const [loginSenha, setLoginSenha] = useState("");
   const [loginError, setLoginError] = useState("");
@@ -128,10 +134,26 @@ function App() {
     return fetch(url, { ...options, headers });
   };
 
+  useEffect(() => {
+    location.hash = section;
+  }, [section]);
+
+  useEffect(() => {
+    const onHashChange = () => {
+      const hash = location.hash.replace("#", "") as Section;
+      if (["salas", "professores", "alunos", "agendamentos"].includes(hash)) {
+        setSection(hash);
+      }
+    };
+    window.addEventListener("hashchange", onHashChange);
+    return () => window.removeEventListener("hashchange", onHashChange);
+  }, []);
+
   const handleLogin = async () => {
     if (!loginEmail || !loginSenha) { setLoginError("Preencha email e senha"); return; }
     setLoginLoading(true);
     setLoginError("");
+    setError(null);
     try {
       const res = await fetch(`${backendUrl}/api/auth/login`, {
         method: "POST",
@@ -144,6 +166,10 @@ function App() {
       }
       const data = await res.json();
       setUser({ nome: data.usuario.nome, role: data.usuario.role, professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf });
+      localStorage.setItem("user", JSON.stringify({
+        nome: data.usuario.nome, role: data.usuario.role,
+        professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf
+      }));
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : "Erro ao fazer login");
     } finally {
@@ -153,6 +179,7 @@ function App() {
 
   const handleLogout = () => {
     setUser(null);
+    localStorage.removeItem("user");
     setLoginEmail("");
     setLoginSenha("");
   };
@@ -195,6 +222,12 @@ function App() {
       }
       const data = await res.json();
       setUser(p => p ? { ...p, nome: data.nome } : null);
+      const saved = localStorage.getItem("user");
+      if (saved) {
+        const u = JSON.parse(saved);
+        u.nome = data.nome;
+        localStorage.setItem("user", JSON.stringify(u));
+      }
       setPerfilDialogOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar perfil");
@@ -204,21 +237,23 @@ function App() {
   };
 
   useEffect(() => {
+    if (!user) return;
     (async () => {
       setLoading(true);
       try {
         const headers: Record<string, string> = {};
         if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
         const [a, b, c] = await Promise.all([
-          fetch(`${backendUrl}/api/salas`),
-          fetch(`${backendUrl}/api/professores`),
-          fetch(`${backendUrl}/api/alunos`),
+          fetch(`${backendUrl}/api/salas`, { headers }),
+          fetch(`${backendUrl}/api/professores`, { headers }),
+          fetch(`${backendUrl}/api/alunos`, { headers }),
         ]);
         if (!a.ok || !b.ok || !c.ok) throw new Error("Falha ao carregar dados");
         const [sd, pd, ad] = await Promise.all([a.json(), b.json(), c.json()]);
         setSalas(sd); setProfessores(pd); setAlunos(ad);
 
-        const agdRes = await fetch(`${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`, { headers });
+        const agdUrl = `${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`;
+        const agdRes = await fetch(agdUrl, { headers });
         if (!agdRes.ok) throw new Error("Falha ao carregar agendamentos");
         setAgendamentos(await agdRes.json());
       } catch (err) {
@@ -297,9 +332,6 @@ function App() {
     setForm(p => ({ ...p, [field]: value }));
   };
 
-  const conflitosRef = useRef(conflitos);
-  useEffect(() => { conflitosRef.current = conflitos; });
-
   useEffect(() => {
     if (section !== "agendamentos" || !dialogOpen) {
       setConflitos([]);
@@ -320,7 +352,7 @@ function App() {
 
     (async () => {
       try {
-        const res = await fetch(`${backendUrl}/api/agendamentos/verificar-conflito?${params}`);
+        const res = await apiFetch(`${backendUrl}/api/agendamentos/verificar-conflito?${params}`);
         if (!res.ok) {
           if (id === conflitoReqId.current) setConflitos(["Erro ao verificar conflitos no servidor"]);
           return;
@@ -339,9 +371,9 @@ function App() {
     const headers: Record<string, string> = {};
     if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
     const fetches: Promise<Response>[] = [];
-    if (section === "salas" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/salas`));
-    if (section === "professores" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/professores`));
-    if (section === "alunos" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/alunos`));
+    if (section === "salas" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/salas`, { headers }));
+    if (section === "professores" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/professores`, { headers }));
+    if (section === "alunos" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/alunos`, { headers }));
     const agdUrl = `${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`;
     fetches.push(fetch(agdUrl, { headers }));
 
@@ -417,7 +449,7 @@ function App() {
           datas.push(d.toISOString().slice(0, 10));
         }
         for (const data of datas) {
-          const res = await fetch(`${backendUrl}/api/agendamentos`, {
+          const res = await apiFetch(`${backendUrl}/api/agendamentos`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ ...payload, data }),
@@ -428,7 +460,7 @@ function App() {
           }
         }
       } else {
-        const res = await fetch(`${backendUrl}/api/${endpoint}${editingId ? `/${editingId}` : ""}`, {
+        const res = await apiFetch(`${backendUrl}/api/${endpoint}${editingId ? `/${editingId}` : ""}`, {
           method: editingId ? "PUT" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
@@ -460,7 +492,7 @@ function App() {
   const confirmDelete = async () => {
     if (!deletingItem) return;
     try {
-      const res = await fetch(`${backendUrl}/api/${section}/${deletingItem.id}`, { method: "DELETE" });
+      const res = await apiFetch(`${backendUrl}/api/${section}/${deletingItem.id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
         throw new Error(data?.error || "Erro ao excluir");
@@ -477,7 +509,7 @@ function App() {
 
   const handleRegistrar = async (id: string) => {
     try {
-      const res = await fetch(`${backendUrl}/api/agendamentos/${id}/registrar`, {
+      const res = await apiFetch(`${backendUrl}/api/agendamentos/${id}/registrar`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: "{}",
@@ -955,12 +987,12 @@ function App() {
 
   return (
     <div className="h-screen flex">
-      <aside className={`${sidebarCollapsed ? "w-14" : "w-60"} transition-all duration-300 bg-neutral-950 text-white flex flex-col shrink-0`}>
-        <div className="h-14 border-b border-white/10 flex items-center gap-2 px-4">
+      <aside className={`${sidebarCollapsed ? "w-16" : "w-60"} transition-all duration-300 bg-neutral-950 text-white flex flex-col shrink-0 ${sidebarCollapsed ? "overflow-hidden" : ""}`}>
+        <div className={`h-14 border-b border-white/10 flex items-center gap-2 ${sidebarCollapsed ? "justify-center px-0" : "px-4"}`}>
           <Music className="size-5 shrink-0" />
           {!sidebarCollapsed && <span className="font-bold tracking-tight truncate">Acordes Music</span>}
         </div>
-        <nav className="flex-1 p-2 space-y-0.5 overflow-auto">
+        <nav className={`flex-1 p-2 space-y-0.5 ${sidebarCollapsed ? "overflow-hidden" : "overflow-auto"}`}>
           {tabs.map(t => {
             const Icon = t.icon;
             return (
@@ -1121,15 +1153,17 @@ function App() {
                      section === "professores" ? "Professores" :
                      section === "alunos" ? "Alunos" : "Agendamentos"}
                   </CardTitle>
-                  <Button size="sm" onClick={openCreate} style={{ display: (user?.role !== "ADMIN" && section !== "agendamentos") ? "none" : undefined }}>
-                    <Plus className="size-3.5" /> Novo
-                  </Button>
+                  {(user?.role === "ADMIN" || section === "agendamentos") && (
+                    <Button size="sm" onClick={openCreate}>
+                      <Plus className="size-3.5" /> Novo
+                    </Button>
+                  )}
                 </div>
                 <div className="relative max-w-xs">
                   <Search className="size-4 absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
                   <Input
                     className="w-full h-9 pl-8 text-sm"
-                    placeholder="Pesquisar..."
+                    placeholder={section === "salas" ? "Buscar por nome..." : section === "agendamentos" ? "Buscar por sala, professor, aluno..." : "Buscar por nome, email ou CPF..."}
                     value={searchQuery}
                     onChange={e => setSearchQuery(e.target.value)}
                   />
