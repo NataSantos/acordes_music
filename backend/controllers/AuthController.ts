@@ -49,6 +49,32 @@ export default function AuthController(prisma: PrismaClient) {
     }
   });
 
+  router.post("/recuperar-senha", async (req: Request, res: Response) => {
+    try {
+      const { email } = req.body;
+      if (!email) {
+        return res.status(400).json({ error: "Email é obrigatório" });
+      }
+
+      const usuario = await prisma.usuario.findUnique({ where: { email } });
+      if (!usuario) {
+        return res.status(404).json({ error: "Nenhum usuário encontrado com este email" });
+      }
+
+      const senhaPadrao = "1234";
+      const hash = await bcrypt.hash(senhaPadrao, 10);
+      await prisma.usuario.update({
+        where: { id: usuario.id },
+        data: { senha: hash },
+      });
+
+      return res.json({ message: `Senha redefinida para "${senhaPadrao}"` });
+    } catch (error) {
+      console.error("Erro ao recuperar senha:", error);
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
+
   router.put("/senha", authMiddleware, async (req: Request, res: Response) => {
     try {
       const { senhaAtual, senhaNova } = req.body;

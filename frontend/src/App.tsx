@@ -27,7 +27,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp, Eye, EyeOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -135,6 +135,11 @@ function App() {
   const [loginSenha, setLoginSenha] = useState("");
   const [loginError, setLoginError] = useState("");
   const [loginLoading, setLoginLoading] = useState(false);
+  const [showSenha, setShowSenha] = useState(false);
+  const [recuperarSenhaDialogOpen, setRecuperarSenhaDialogOpen] = useState(false);
+  const [recuperarSenhaEmail, setRecuperarSenhaEmail] = useState("");
+  const [recuperarSenhaLoading, setRecuperarSenhaLoading] = useState(false);
+  const [recuperarSenhaMessage, setRecuperarSenhaMessage] = useState<string | null>(null);
   const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
   const [senhaForm, setSenhaForm] = useState({ senhaAtual: "", senhaNova: "", confirmar: "" });
   const [perfilDialogOpen, setPerfilDialogOpen] = useState(false);
@@ -220,6 +225,29 @@ function App() {
     }
   };
 
+  const handleRecuperarSenha = async () => {
+    if (!recuperarSenhaEmail) { setRecuperarSenhaMessage("Digite seu email"); return; }
+    setRecuperarSenhaLoading(true);
+    setRecuperarSenhaMessage(null);
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/recuperar-senha`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recuperarSenhaEmail }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRecuperarSenhaMessage(data.message);
+      } else {
+        setRecuperarSenhaMessage(data.error || "Erro ao recuperar senha");
+      }
+    } catch {
+      setRecuperarSenhaMessage("Erro de conexão com o servidor");
+    } finally {
+      setRecuperarSenhaLoading(false);
+    }
+  };
+
   const handleLogout = () => {
     setUser(null);
     localStorage.removeItem("user");
@@ -291,13 +319,27 @@ function App() {
           fetch(`${backendUrl}/api/professores`, { headers }),
           fetch(`${backendUrl}/api/alunos`, { headers }),
         ]);
-        if (!a.ok || !b.ok || !c.ok) throw new Error("Falha ao carregar dados");
+        if (!a.ok || !b.ok || !c.ok) {
+          if (a.status === 401 || b.status === 401 || c.status === 401) {
+            setUser(null);
+            localStorage.removeItem("user");
+            return;
+          }
+          throw new Error("Falha ao carregar dados");
+        }
         const [sd, pd, ad] = await Promise.all([a.json(), b.json(), c.json()]);
         setSalas(sd); setProfessores(pd); setAlunos(ad);
 
         const agdUrl = `${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`;
         const agdRes = await fetch(agdUrl, { headers });
-        if (!agdRes.ok) throw new Error("Falha ao carregar agendamentos");
+        if (!agdRes.ok) {
+          if (agdRes.status === 401) {
+            setUser(null);
+            localStorage.removeItem("user");
+            return;
+          }
+          throw new Error("Falha ao carregar agendamentos");
+        }
         setAgendamentos(await agdRes.json());
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao carregar");
@@ -422,6 +464,11 @@ function App() {
     fetches.push(fetch(agdUrl, { headers }));
 
     const results = await Promise.all(fetches);
+    if (results.some(r => r.status === 401)) {
+      setUser(null);
+      localStorage.removeItem("user");
+      return;
+    }
     const data = await Promise.all(results.map(r => r.json()));
 
     let idx = 0;
@@ -1258,7 +1305,8 @@ function App() {
 
   if (!user) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 relative overflow-hidden">
+      <>
+        <div className="h-screen flex items-center justify-center bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-800/20 via-transparent to-transparent" />
         <div className="w-full max-w-sm mx-auto p-8 relative">
           <Card className="border-neutral-800/50 bg-neutral-900/60 backdrop-blur-xl shadow-2xl">
@@ -1286,14 +1334,24 @@ function App() {
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-white/60 text-xs font-medium uppercase tracking-wider">Senha</Label>
-                  <Input
-                    type="password"
-                    className="bg-white/5 border-white/10 text-white placeholder:text-white/25 h-10 focus-visible:ring-white/20 focus-visible:border-white/30 transition-all"
-                    placeholder="Digite sua senha"
-                    value={loginSenha}
-                    onChange={e => setLoginSenha(e.target.value)}
-                    onKeyDown={e => e.key === "Enter" && handleLogin()}
-                  />
+                  <div className="relative">
+                    <Input
+                      type={showSenha ? "text" : "password"}
+                      className="bg-white/5 border-white/10 text-white placeholder:text-white/25 h-10 pr-10 focus-visible:ring-white/20 focus-visible:border-white/30 transition-all"
+                      placeholder="Digite sua senha"
+                      value={loginSenha}
+                      onChange={e => setLoginSenha(e.target.value)}
+                      onKeyDown={e => e.key === "Enter" && handleLogin()}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowSenha(!showSenha)}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/70 transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showSenha ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    </button>
+                  </div>
                 </div>
                 {loginError && (
                   <div className="flex items-center gap-2 text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded-lg px-3 py-2.5">
@@ -1301,6 +1359,13 @@ function App() {
                     <span>{loginError}</span>
                   </div>
                 )}
+                <button
+                  type="button"
+                  onClick={() => { setRecuperarSenhaDialogOpen(true); setLoginError(""); setRecuperarSenhaMessage(null); setRecuperarSenhaEmail(""); }}
+                  className="text-xs text-white/40 hover:text-white/70 transition-colors self-start -mt-1"
+                >
+                  Esqueceu a senha?
+                </button>
                 <Button className="w-full h-10 bg-white text-black hover:bg-white/90 hover:shadow-lg transition-all font-medium" onClick={handleLogin} disabled={loginLoading}>
                   {loginLoading ? (
                     <span className="flex items-center gap-2"><span className="size-3.5 border-2 border-black border-t-transparent rounded-full animate-spin" /> Entrando...</span>
@@ -1312,6 +1377,38 @@ function App() {
           <p className="text-center text-xs text-white/20 mt-6">Sistema de Gestão de Escolas de Música</p>
         </div>
       </div>
+      <Dialog open={recuperarSenhaDialogOpen} onOpenChange={v => { setRecuperarSenhaDialogOpen(v); setRecuperarSenhaMessage(v ? recuperarSenhaMessage : null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Recuperar senha</DialogTitle>
+            <DialogDescription>Digite seu email para redefinir a senha. A senha será redefinida para 1234.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 py-2">
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input
+                type="email"
+                placeholder="Digite seu email"
+                value={recuperarSenhaEmail}
+                onChange={e => setRecuperarSenhaEmail(e.target.value)}
+                onKeyDown={e => e.key === "Enter" && handleRecuperarSenha()}
+              />
+            </div>
+            {recuperarSenhaMessage && (
+              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2.5 ${recuperarSenhaMessage.startsWith("Senha") ? "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20" : "text-red-400 bg-red-400/10 border border-red-400/20"}`}>
+                <span>{recuperarSenhaMessage}</span>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setRecuperarSenhaDialogOpen(false); setRecuperarSenhaMessage(null); }}>Cancelar</Button>
+            <Button onClick={handleRecuperarSenha} disabled={recuperarSenhaLoading}>
+              {recuperarSenhaLoading ? "Enviando..." : "Redefinir senha"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      </>
     );
   }
 
@@ -1356,18 +1453,18 @@ function App() {
                   sidebarCollapsed ? "h-10 px-0 justify-center" : "h-9 px-3"
                 } ${
                   isActive
-                    ? "text-white bg-white/[0.07]"
-                    : "text-white/40 hover:text-white hover:bg-white/[0.04]"
+                    ? "text-white bg-white/15"
+                    : "text-white/40 hover:text-white hover:bg-white/10"
                 }`}
                 onClick={() => { setSection(t.value); setDialogOpen(false); }}
               >
                 {isActive && !sidebarCollapsed && (
-                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-white/40" />
+                  <div className="absolute left-0 top-1/2 -translate-y-1/2 w-0.5 h-5 rounded-full bg-white/60" />
                 )}
                 <div className={`size-8 rounded-lg flex items-center justify-center shrink-0 transition-all ${
                   isActive
-                    ? "bg-white/[0.08] text-white"
-                    : "text-white/40 group-hover:text-white"
+                    ? "bg-white/20"
+                    : ""
                 }`}>
                   <Icon className="size-4" />
                 </div>
@@ -1377,7 +1474,7 @@ function App() {
                   </div>
                 )}
                 {isActive && !sidebarCollapsed && (
-                  <div className="size-1.5 rounded-full bg-white/40" />
+                  <div className="size-1.5 rounded-full bg-white/50" />
                 )}
               </Button>
             );
@@ -1397,13 +1494,13 @@ function App() {
             <div className="space-y-2">
               <div className="flex flex-wrap gap-1">
                 <button
-                  className={`text-xs px-2.5 py-1 rounded-md transition-all ${!filterStatus ? "bg-white/12 text-white shadow-xs" : "text-white/40 hover:text-white hover:bg-white/5"}`}
+                  className={`text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${!filterStatus ? "bg-white/12 text-white shadow-xs" : "text-white/40 hover:text-white hover:bg-white/5"}`}
                   onClick={() => setFilterStatus("")}
                 >Todos</button>
                 {["AGENDADO", "CONCLUIDO"].map(s => (
                   <button
                     key={s}
-                    className={`text-xs px-2.5 py-1 rounded-md transition-all ${filterStatus === s ? "bg-white/12 text-white shadow-xs" : "text-white/40 hover:text-white hover:bg-white/5"}`}
+                    className={`text-xs px-2.5 py-1 rounded-md transition-all cursor-pointer ${filterStatus === s ? "bg-white/12 text-white shadow-xs" : "text-white/40 hover:text-white hover:bg-white/5"}`}
                     onClick={() => setFilterStatus(s)}
                   >{statusLabel[s]}</button>
                 ))}
@@ -1427,7 +1524,7 @@ function App() {
         {section === "agendamentos" && sidebarCollapsed && (
           <div className="px-1 py-2 border-t border-white/[0.06] flex justify-center relative z-10">
             <button
-              className="relative size-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors"
+              className="relative size-8 flex items-center justify-center rounded-lg text-white/40 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               onClick={() => setSidebarCollapsed(false)}
               title="Filtros"
             >
@@ -1440,46 +1537,78 @@ function App() {
         )}
         <div className="mt-auto relative z-10">
           <div className="px-3 py-3 border-t border-white/[0.06] bg-gradient-to-t from-neutral-950 via-neutral-950 to-transparent">
-            {!sidebarCollapsed && (
-              <button
-                className="flex items-center gap-3 w-full rounded-lg px-2 py-2 hover:bg-white/[0.04] transition-colors group"
-                onClick={async () => {
-                  try {
-                    const res = await apiFetch(`${backendUrl}/api/auth/me`);
-                    if (res.ok) {
-                      const data = await res.json();
-                      setPerfilForm({ nome: data.nome, email: data.email, telefone: data.telefone ?? "" });
-                    } else {
+            {!sidebarCollapsed ? (
+              <>
+                <button
+                  className="flex items-center gap-3 w-full rounded-lg px-2 py-2 hover:bg-white/[0.04] transition-colors group cursor-pointer"
+                  onClick={async () => {
+                    try {
+                      const res = await apiFetch(`${backendUrl}/api/auth/me`);
+                      if (res.ok) {
+                        const data = await res.json();
+                        setPerfilForm({ nome: data.nome, email: data.email, telefone: data.telefone ?? "" });
+                      } else {
+                        setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
+                      }
+                    } catch {
                       setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
                     }
-                  } catch {
-                    setPerfilForm({ nome: user?.nome ?? "", email: "", telefone: "" });
-                  }
-                  setPerfilDialogOpen(true);
-                }}
-              >
-                <div className="size-8 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0">
-                  <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
-                </div>
-                <div className="flex flex-col min-w-0 flex-1 text-left">
-                  <span className="text-sm font-medium text-white/80 truncate group-hover:text-white transition-colors">{user?.nome}</span>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-white/30 capitalize">{user?.role?.toLowerCase() === "admin" ? "Administrador" : "Professor"}</span>
+                    setPerfilDialogOpen(true);
+                  }}
+                >
+                  <div className="size-8 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0">
+                    <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
                   </div>
+                  <div className="flex flex-col min-w-0 flex-1 text-left">
+                    <span className="text-sm font-medium text-white/80 truncate group-hover:text-white transition-colors">{user?.nome}</span>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[10px] text-white/30 capitalize">{user?.role?.toLowerCase() === "admin" ? "Administrador" : "Professor"}</span>
+                    </div>
+                  </div>
+                  <div className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
+                    user?.role === "ADMIN" ? "bg-white/15 text-white/80" : "bg-white/10 text-white/60"
+                  }`}>
+                    {user?.role === "ADMIN" ? "Admin" : "Prof"}
+                  </div>
+                </button>
+                <div className="flex gap-1 items-center mt-2">
+                  {user?.role === "PROFESSOR" && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg gap-1.5"
+                      onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
+                      title="Alterar senha"
+                    >
+                      <span className="text-xs font-bold">#</span>
+                      Senha
+                    </Button>
+                  )}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg gap-1.5"
+                    onClick={handleLogout}
+                    title="Sair"
+                  >
+                    <LogOut className="size-3" />
+                    Sair
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="h-8 w-8 p-0 text-white/30 hover:text-white hover:bg-white/10 shrink-0 rounded-lg ml-auto"
+                    onClick={() => setSidebarCollapsed(p => !p)}
+                    title="Recolher"
+                  >
+                    <PanelLeftClose className="size-3.5" />
+                  </Button>
                 </div>
-                <div className={`text-[10px] font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded ${
-                  user?.role === "ADMIN" ? "bg-white/15 text-white/80" : "bg-white/10 text-white/60"
-                }`}>
-                  {user?.role === "ADMIN" ? "Admin" : "Prof"}
-                </div>
-              </button>
-            )}
-            <div className={`flex gap-1 items-center ${!sidebarCollapsed ? "mt-2" : ""}`}>
-              {sidebarCollapsed && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex-1 h-9 p-0 text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg"
+              </>
+            ) : (
+              <div className="flex flex-col items-center gap-2">
+                <button
+                  className="size-9 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/20 transition-all cursor-pointer"
                   onClick={async () => {
                     try {
                       const res = await apiFetch(`${backendUrl}/api/auth/me`);
@@ -1496,41 +1625,19 @@ function App() {
                   }}
                   title="Editar Perfil"
                 >
-                  <User className="size-3.5" />
-                </Button>
-              )}
-              {!sidebarCollapsed && user?.role === "PROFESSOR" && (
+                  <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                </button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg gap-1.5"
-                  onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
-                  title="Alterar senha"
+                  className="h-8 w-8 p-0 text-white/30 hover:text-white hover:bg-white/10 shrink-0 rounded-lg"
+                  onClick={() => setSidebarCollapsed(p => !p)}
+                  title="Expandir"
                 >
-                  <span className="text-xs font-bold">#</span>
-                  Senha
+                  <PanelLeftOpen className="size-3.5" />
                 </Button>
-              )}
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/[0.06] shrink-0 rounded-lg gap-1.5"
-                onClick={handleLogout}
-                title="Sair"
-              >
-                <LogOut className="size-3" />
-                {!sidebarCollapsed && "Sair"}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-8 w-8 p-0 text-white/30 hover:text-white hover:bg-white/[0.06] shrink-0 rounded-lg ml-auto"
-                onClick={() => setSidebarCollapsed(p => !p)}
-                title={sidebarCollapsed ? "Expandir" : "Recolher"}
-              >
-                {sidebarCollapsed ? <PanelLeftOpen className="size-3.5" /> : <PanelLeftClose className="size-3.5" />}
-              </Button>
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </aside>
