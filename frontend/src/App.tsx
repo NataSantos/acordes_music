@@ -1646,50 +1646,41 @@ function App() {
         <main className="flex-1 overflow-auto p-6">
             <div className="max-w-7xl mx-auto space-y-6">
               {section === "financeiro" ? renderFinanceiro() : (
-                <Card className="border-border/60 shadow-sm overflow-hidden">
-                  <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
-                  <CardHeader className="space-y-4 border-b border-border/40 bg-muted/10 pb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <div className="size-10 rounded-xl bg-muted/50 border border-border/40 flex items-center justify-center">
-                          {(() => {
-                            const Icon = tabs.find(t => t.value === section)?.icon || Building2;
-                            return <Icon className="size-5 text-muted-foreground/70" />;
-                          })()}
-                        </div>
-                        <div>
-                          <CardTitle className="text-lg font-semibold">
-                            {section === "salas" ? "Salas" :
-                             section === "professores" ? "Professores" :
-                             section === "alunos" ? "Alunos" : "Agendamentos"}
-                          </CardTitle>
-                          <p className="text-xs text-muted-foreground/60 mt-0.5">
-                            {section === "salas" ? "Gerencie as salas de aula" :
-                             section === "professores" ? "Gerencie os professores" :
-                             section === "alunos" ? "Gerencie os alunos" : "Acompanhe os agendamentos"}
-                          </p>
-                        </div>
-                      </div>
-                      {(user?.role === "ADMIN" || section === "agendamentos") && (
-                        <Button size="sm" onClick={openCreate} className="shadow-xs">
-                          <Plus className="size-3.5" /> Novo
-                        </Button>
-                      )}
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-2xl font-bold tracking-tight">
+                        {section === "salas" ? "Salas" :
+                         section === "professores" ? "Professores" :
+                         section === "alunos" ? "Alunos" : "Agendamentos"}
+                      </h1>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {section === "salas" ? "Gerencie as salas de aula" :
+                         section === "professores" ? "Gerencie os professores" :
+                         section === "alunos" ? "Gerencie os alunos" : "Acompanhe os agendamentos"}
+                      </p>
                     </div>
-                    <div className="relative max-w-sm">
-                      <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
-                      <Input
-                        className="w-full h-9 pl-9 text-sm bg-background/80 border-border/50 focus-visible:bg-background transition-all"
-                        placeholder={section === "salas" ? "Buscar por nome..." : section === "agendamentos" ? "Buscar por sala, professor, aluno..." : "Buscar por nome, email ou CPF..."}
-                        value={searchQuery}
-                        onChange={e => setSearchQuery(e.target.value)}
-                      />
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    {renderTable()}
-                  </CardContent>
-                </Card>
+                    {(user?.role === "ADMIN" || section === "agendamentos") && (
+                      <Button size="sm" onClick={openCreate} className="shadow-xs">
+                        <Plus className="size-3.5" /> Novo
+                      </Button>
+                    )}
+                  </div>
+                  <div className="relative max-w-sm">
+                    <Search className="size-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50" />
+                    <Input
+                      className="w-full h-9 pl-9 text-sm bg-background/80 border-border/50 focus-visible:bg-background transition-all"
+                      placeholder={section === "salas" ? "Buscar por nome..." : section === "agendamentos" ? "Buscar por sala, professor, aluno..." : "Buscar por nome, email ou CPF..."}
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Card className="border-border/60 shadow-sm overflow-hidden">
+                    <CardContent className="p-0">
+                      {renderTable()}
+                    </CardContent>
+                  </Card>
+                </div>
               )}
           </div>
         </main>
