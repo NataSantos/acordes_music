@@ -2,7 +2,11 @@ import { Router } from "express";
 import type { Request, Response } from "express";
 import { PrismaClient } from "../generated/client.js";
 import bcrypt from "bcryptjs";
+import crypto from "node:crypto";
 import { gerarToken, authMiddleware } from "../middleware/auth.js";
+import { sendPasswordResetCode } from "../lib/email.js";
+
+const resetCodes = new Map<string, { codigo: string; email: string; expires: number }>();
 
 export default function AuthController(prisma: PrismaClient) {
   const router = Router();
@@ -49,7 +53,7 @@ export default function AuthController(prisma: PrismaClient) {
     }
   });
 
-  router.post("/recuperar-senha", async (req: Request, res: Response) => {
+  router.post("/solicitar-codigo", async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
       if (!email) {
@@ -61,16 +65,60 @@ export default function AuthController(prisma: PrismaClient) {
         return res.status(404).json({ error: "Nenhum usuário encontrado com este email" });
       }
 
-      const senhaPadrao = "1234";
-      const hash = await bcrypt.hash(senhaPadrao, 10);
+      const codigo = crypto.randomInt(100000, 999999).toString();
+      resetCodes.set(usuario.id, {
+        codigo,
+        email: usuario.email,
+        expires: Date.now() + 15 * 60 * 1000,
+      });
+
+      await sendPasswordResetCode(usuario.email, codigo, usuario.nome);
+
+      return res.json({ message: "Código de verificação enviado para seu email" });
+    } catch (error) {
+      console.error("Erro ao solicitar código:", error);
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
+
+  router.post("/redefinir-senha", async (req: Request, res: Response) => {
+    try {
+      const { email, codigo, senhaNova } = req.body;
+      if (!email || !codigo || !senhaNova) {
+        return res.status(400).json({ error: "Email, código e nova senha são obrigatórios" });
+      }
+      if (senhaNova.length < 4) {
+        return res.status(400).json({ error: "A nova senha deve ter no mínimo 4 caracteres" });
+      }
+
+      const usuario = await prisma.usuario.findUnique({ where: { email } });
+      if (!usuario) {
+        return res.status(404).json({ error: "Nenhum usuário encontrado com este email" });
+      }
+
+      const stored = resetCodes.get(usuario.id);
+      if (!stored) {
+        return res.status(400).json({ error: "Nenhum código solicitado. Solicite um novo código." });
+      }
+      if (Date.now() > stored.expires) {
+        resetCodes.delete(usuario.id);
+        return res.status(400).json({ error: "Código expirado. Solicite um novo código." });
+      }
+      if (stored.codigo !== codigo) {
+        return res.status(400).json({ error: "Código inválido" });
+      }
+
+      resetCodes.delete(usuario.id);
+
+      const hash = await bcrypt.hash(senhaNova, 10);
       await prisma.usuario.update({
         where: { id: usuario.id },
         data: { senha: hash },
       });
 
-      return res.json({ message: `Senha redefinida para "${senhaPadrao}"` });
+      return res.json({ message: "Senha redefinida com sucesso" });
     } catch (error) {
-      console.error("Erro ao recuperar senha:", error);
+      console.error("Erro ao redefinir senha:", error);
       return res.status(500).json({ error: "Erro interno do servidor" });
     }
   });

@@ -137,7 +137,11 @@ function App() {
   const [loginLoading, setLoginLoading] = useState(false);
   const [showSenha, setShowSenha] = useState(false);
   const [recuperarSenhaDialogOpen, setRecuperarSenhaDialogOpen] = useState(false);
+  const [recuperarSenhaStep, setRecuperarSenhaStep] = useState<1 | 2 | 3>(1);
   const [recuperarSenhaEmail, setRecuperarSenhaEmail] = useState("");
+  const [recuperarSenhaCodigo, setRecuperarSenhaCodigo] = useState("");
+  const [recuperarSenhaNova, setRecuperarSenhaNova] = useState("");
+  const [recuperarSenhaConfirmar, setRecuperarSenhaConfirmar] = useState("");
   const [recuperarSenhaLoading, setRecuperarSenhaLoading] = useState(false);
   const [recuperarSenhaMessage, setRecuperarSenhaMessage] = useState<string | null>(null);
   const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
@@ -225,21 +229,53 @@ function App() {
     }
   };
 
-  const handleRecuperarSenha = async () => {
+  const handleSolicitarCodigo = async () => {
     if (!recuperarSenhaEmail) { setRecuperarSenhaMessage("Digite seu email"); return; }
     setRecuperarSenhaLoading(true);
     setRecuperarSenhaMessage(null);
     try {
-      const res = await fetch(`${backendUrl}/api/auth/recuperar-senha`, {
+      const res = await fetch(`${backendUrl}/api/auth/solicitar-codigo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: recuperarSenhaEmail }),
       });
       const data = await res.json();
       if (res.ok) {
+        setRecuperarSenhaStep(2);
         setRecuperarSenhaMessage(data.message);
       } else {
-        setRecuperarSenhaMessage(data.error || "Erro ao recuperar senha");
+        setRecuperarSenhaMessage(data.error || "Erro ao solicitar código");
+      }
+    } catch {
+      setRecuperarSenhaMessage("Erro de conexão com o servidor");
+    } finally {
+      setRecuperarSenhaLoading(false);
+    }
+  };
+
+  const handleRedefinirSenha = async () => {
+    if (!recuperarSenhaCodigo) { setRecuperarSenhaMessage("Digite o código recebido"); return; }
+    if (!recuperarSenhaNova) { setRecuperarSenhaMessage("Digite a nova senha"); return; }
+    if (recuperarSenhaNova.length < 4) { setRecuperarSenhaMessage("A senha deve ter no mínimo 4 caracteres"); return; }
+    if (recuperarSenhaNova !== recuperarSenhaConfirmar) { setRecuperarSenhaMessage("As senhas não coincidem"); return; }
+    setRecuperarSenhaLoading(true);
+    setRecuperarSenhaMessage(null);
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/redefinir-senha`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: recuperarSenhaEmail,
+          codigo: recuperarSenhaCodigo,
+          senhaNova: recuperarSenhaNova,
+        }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRecuperarSenhaMessage(data.message);
+        setTimeout(() => setRecuperarSenhaDialogOpen(false), 2000);
+      } else {
+        setRecuperarSenhaMessage(data.error || "Erro ao redefinir senha");
       }
     } catch {
       setRecuperarSenhaMessage("Erro de conexão com o servidor");
@@ -1361,7 +1397,7 @@ function App() {
                 )}
                 <button
                   type="button"
-                  onClick={() => { setRecuperarSenhaDialogOpen(true); setLoginError(""); setRecuperarSenhaMessage(null); setRecuperarSenhaEmail(""); }}
+                  onClick={() => { setRecuperarSenhaDialogOpen(true); setLoginError(""); setRecuperarSenhaStep(1); setRecuperarSenhaMessage(null); setRecuperarSenhaEmail(""); setRecuperarSenhaCodigo(""); setRecuperarSenhaNova(""); setRecuperarSenhaConfirmar(""); }}
                   className="text-xs text-white/40 hover:text-white/70 transition-colors self-start -mt-1"
                 >
                   Esqueceu a senha?
@@ -1377,34 +1413,98 @@ function App() {
           <p className="text-center text-xs text-white/20 mt-6">Sistema de Gestão de Escolas de Música</p>
         </div>
       </div>
-      <Dialog open={recuperarSenhaDialogOpen} onOpenChange={v => { setRecuperarSenhaDialogOpen(v); setRecuperarSenhaMessage(v ? recuperarSenhaMessage : null); }}>
+      <Dialog open={recuperarSenhaDialogOpen} onOpenChange={v => { setRecuperarSenhaDialogOpen(v); if (!v) { setRecuperarSenhaStep(1); setRecuperarSenhaMessage(null); } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Recuperar senha</DialogTitle>
-            <DialogDescription>Digite seu email para redefinir a senha. A senha será redefinida para 1234.</DialogDescription>
+            <DialogDescription>
+              {recuperarSenhaStep === 1 && "Digite seu email para receber um código de verificação."}
+              {recuperarSenhaStep === 2 && "Digite o código recebido no seu email."}
+              {recuperarSenhaStep === 3 && "Digite a nova senha desejada."}
+            </DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
-            <div className="space-y-1.5">
-              <Label>Email</Label>
-              <Input
-                type="email"
-                placeholder="Digite seu email"
-                value={recuperarSenhaEmail}
-                onChange={e => setRecuperarSenhaEmail(e.target.value)}
-                onKeyDown={e => e.key === "Enter" && handleRecuperarSenha()}
-              />
-            </div>
+            {recuperarSenhaStep === 1 && (
+              <div className="space-y-1.5">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  placeholder="Digite seu email"
+                  value={recuperarSenhaEmail}
+                  onChange={e => setRecuperarSenhaEmail(e.target.value)}
+                  onKeyDown={e => e.key === "Enter" && handleSolicitarCodigo()}
+                />
+              </div>
+            )}
+            {recuperarSenhaStep === 2 && (
+              <div className="space-y-1.5">
+                <Label>Código de verificação</Label>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  placeholder="Digite o código de 6 dígitos"
+                  value={recuperarSenhaCodigo}
+                  onChange={e => setRecuperarSenhaCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                  onKeyDown={e => e.key === "Enter" && setRecuperarSenhaStep(3)}
+                />
+              </div>
+            )}
+            {recuperarSenhaStep === 3 && (
+              <div className="space-y-3">
+                <div className="space-y-1.5">
+                  <Label>Nova senha</Label>
+                  <Input
+                    type="password"
+                    placeholder="Mínimo 4 caracteres"
+                    value={recuperarSenhaNova}
+                    onChange={e => setRecuperarSenhaNova(e.target.value)}
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Confirmar senha</Label>
+                  <Input
+                    type="password"
+                    placeholder="Repita a nova senha"
+                    value={recuperarSenhaConfirmar}
+                    onChange={e => setRecuperarSenhaConfirmar(e.target.value)}
+                    onKeyDown={e => e.key === "Enter" && handleRedefinirSenha()}
+                  />
+                </div>
+              </div>
+            )}
             {recuperarSenhaMessage && (
-              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2.5 ${recuperarSenhaMessage.startsWith("Senha") ? "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20" : "text-red-400 bg-red-400/10 border border-red-400/20"}`}>
+              <div className={`flex items-center gap-2 text-sm rounded-lg px-3 py-2.5 ${recuperarSenhaMessage.startsWith("Código") || recuperarSenhaMessage.startsWith("Senha") ? "text-emerald-400 bg-emerald-400/10 border border-emerald-400/20" : "text-red-400 bg-red-400/10 border border-red-400/20"}`}>
                 <span>{recuperarSenhaMessage}</span>
               </div>
             )}
           </div>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => { setRecuperarSenhaDialogOpen(false); setRecuperarSenhaMessage(null); }}>Cancelar</Button>
-            <Button onClick={handleRecuperarSenha} disabled={recuperarSenhaLoading}>
-              {recuperarSenhaLoading ? "Enviando..." : "Redefinir senha"}
+            <Button variant="outline" onClick={() => {
+              if (recuperarSenhaStep === 1) {
+                setRecuperarSenhaDialogOpen(false);
+                setRecuperarSenhaMessage(null);
+              } else {
+                setRecuperarSenhaStep(s => (s - 1) as 1 | 2 | 3);
+                setRecuperarSenhaMessage(null);
+              }
+            }}>
+              {recuperarSenhaStep === 1 ? "Cancelar" : "Voltar"}
             </Button>
+            {recuperarSenhaStep === 1 && (
+              <Button onClick={handleSolicitarCodigo} disabled={recuperarSenhaLoading}>
+                {recuperarSenhaLoading ? "Enviando..." : "Enviar código"}
+              </Button>
+            )}
+            {recuperarSenhaStep === 2 && (
+              <Button onClick={() => setRecuperarSenhaStep(3)} disabled={recuperarSenhaCodigo.length < 6}>
+                Avançar
+              </Button>
+            )}
+            {recuperarSenhaStep === 3 && (
+              <Button onClick={handleRedefinirSenha} disabled={recuperarSenhaLoading}>
+                {recuperarSenhaLoading ? "Redefinindo..." : "Redefinir senha"}
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1572,18 +1672,6 @@ function App() {
                   </div>
                 </button>
                 <div className="flex gap-1 items-center mt-2">
-                  {user?.role === "PROFESSOR" && (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-8 px-2 text-[11px] text-white/40 hover:text-white hover:bg-white/10 shrink-0 rounded-lg gap-1.5"
-                      onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
-                      title="Alterar senha"
-                    >
-                      <span className="text-xs font-bold">#</span>
-                      Senha
-                    </Button>
-                  )}
                   <Button
                     variant="ghost"
                     size="sm"
@@ -1812,6 +1900,16 @@ function App() {
               <Label className="text-xs font-medium">Telefone</Label>
               <Input value={perfilForm.telefone} onChange={e => setPerfilForm(p => ({ ...p, telefone: e.target.value }))} />
             </div>
+            <div className="border-t border-border/40 pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5"
+                onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
+              >
+                Alterar senha
+              </Button>
+            </div>
           </div>
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => setPerfilDialogOpen(false)}>Cancelar</Button>
@@ -1892,6 +1990,16 @@ function App() {
             <div className="space-y-1.5">
               <Label>Telefone</Label>
               <Input value={perfilForm.telefone} onChange={e => setPerfilForm(p => ({ ...p, telefone: e.target.value.replace(/\D/g, "") }))} />
+            </div>
+            <div className="border-t border-border/40 pt-3">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs gap-1.5"
+                onClick={() => { setSenhaForm({ senhaAtual: "", senhaNova: "", confirmar: "" }); setSenhaDialogOpen(true); }}
+              >
+                Alterar senha
+              </Button>
             </div>
           </div>
           <DialogFooter>
