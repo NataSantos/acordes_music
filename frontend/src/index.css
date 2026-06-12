@@ -4,6 +4,11 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@keyframes caret-blink {
+  0%, 70% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
@@ -74,6 +79,7 @@
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --animate-caret-blink: caret-blink 1.2s ease-out infinite;
 }
 
 @layer base {

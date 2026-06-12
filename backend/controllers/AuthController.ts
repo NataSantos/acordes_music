@@ -44,6 +44,7 @@ export default function AuthController(prisma: PrismaClient) {
           cpf: usuario.cpf,
           email: usuario.email,
           role: usuario.role,
+          foto: usuario.foto,
           professorId: professor?.id ?? null,
         },
       });
@@ -77,6 +78,37 @@ export default function AuthController(prisma: PrismaClient) {
       return res.json({ message: "Código de verificação enviado para seu email" });
     } catch (error) {
       console.error("Erro ao solicitar código:", error);
+      return res.status(500).json({ error: "Erro interno do servidor" });
+    }
+  });
+
+  router.post("/verificar-codigo", async (req: Request, res: Response) => {
+    try {
+      const { email, codigo } = req.body;
+      if (!email || !codigo) {
+        return res.status(400).json({ error: "Email e código são obrigatórios" });
+      }
+
+      const usuario = await prisma.usuario.findUnique({ where: { email } });
+      if (!usuario) {
+        return res.status(404).json({ error: "Nenhum usuário encontrado com este email" });
+      }
+
+      const stored = resetCodes.get(usuario.id);
+      if (!stored) {
+        return res.status(400).json({ error: "Nenhum código solicitado. Solicite um novo código." });
+      }
+      if (Date.now() > stored.expires) {
+        resetCodes.delete(usuario.id);
+        return res.status(400).json({ error: "Código expirado. Solicite um novo código." });
+      }
+      if (stored.codigo !== codigo) {
+        return res.status(400).json({ error: "Código inválido" });
+      }
+
+      return res.json({ message: "Código verificado com sucesso" });
+    } catch (error) {
+      console.error("Erro ao verificar código:", error);
       return res.status(500).json({ error: "Erro interno do servidor" });
     }
   });
@@ -160,7 +192,7 @@ export default function AuthController(prisma: PrismaClient) {
     try {
       const usuario = await prisma.usuario.findUnique({
         where: { id: req.user!.usuarioId },
-        select: { id: true, nome: true, cpf: true, email: true, telefone: true, role: true },
+        select: { id: true, nome: true, cpf: true, email: true, telefone: true, role: true, foto: true },
       });
       if (!usuario) {
         return res.status(404).json({ error: "Usuário não encontrado" });
@@ -174,7 +206,7 @@ export default function AuthController(prisma: PrismaClient) {
 
   router.put("/me", authMiddleware, async (req: Request, res: Response) => {
     try {
-      const { nome, email, telefone } = req.body;
+      const { nome, email, telefone, foto } = req.body;
       if (!nome || !email || !telefone) {
         return res.status(400).json({ error: "Nome, email e telefone são obrigatórios" });
       }
@@ -193,12 +225,12 @@ export default function AuthController(prisma: PrismaClient) {
 
       await prisma.usuario.update({
         where: { id: usuario.id },
-        data: { nome, email, telefone },
+        data: { nome, email, telefone, ...(foto !== undefined && { foto }) },
       });
 
       const updated = await prisma.usuario.findUnique({
         where: { id: usuario.id },
-        select: { id: true, nome: true, cpf: true, email: true, telefone: true, role: true },
+        select: { id: true, nome: true, cpf: true, email: true, telefone: true, role: true, foto: true },
       });
       const professor = await prisma.professor.findUnique({ where: { usuarioId: usuario.id } });
 

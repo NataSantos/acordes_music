@@ -12,6 +12,10 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { InputOTP, InputOTPGroup, InputOTPSlot, InputOTPSeparator } from "@/components/ui/input-otp";
+import { REGEXP_ONLY_DIGITS } from "input-otp";
+import Cropper from "react-easy-crop";
+import "react-easy-crop/react-easy-crop.css";
 import {
   Select,
   SelectContent,
@@ -78,6 +82,32 @@ type Section = "salas" | "professores" | "alunos" | "agendamentos" | "financeiro
 
 const backendUrl = import.meta.env.VITE_API_URL ?? `http://${location.hostname}:3000`;
 
+function createCroppedBlob(
+  imageSrc: string,
+  pixelCrop: { width: number; height: number; x: number; y: number }
+): Promise<Blob> {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => {
+      const canvas = document.createElement("canvas");
+      canvas.width = pixelCrop.width;
+      canvas.height = pixelCrop.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.drawImage(
+        image,
+        pixelCrop.x, pixelCrop.y, pixelCrop.width, pixelCrop.height,
+        0, 0, pixelCrop.width, pixelCrop.height
+      );
+      canvas.toBlob(blob => {
+        if (blob) resolve(blob);
+        else reject(new Error("Falha ao gerar imagem"));
+      }, "image/jpeg", 0.9);
+    };
+    image.onerror = reject;
+    image.src = imageSrc;
+  });
+}
+
 const statusLabel: Record<string, string> = {
   AGENDADO: "Agendado",
   CONCLUIDO: "Concluído",
@@ -127,7 +157,7 @@ function App() {
   });
   const [repetirSemanal, setRepetirSemanal] = useState(false);
   const [repetirSemanas, setRepetirSemanas] = useState(4);
-  const [user, setUser] = useState<{ nome: string; role: string; professorId: string | null; token: string; cpf: string } | null>(() => {
+  const [user, setUser] = useState<{ id: string; nome: string; role: string; professorId: string | null; token: string; cpf: string; foto: string | null } | null>(() => {
     const saved = localStorage.getItem("user");
     return saved ? JSON.parse(saved) : null;
   });
@@ -147,8 +177,15 @@ function App() {
   const [senhaDialogOpen, setSenhaDialogOpen] = useState(false);
   const [senhaForm, setSenhaForm] = useState({ senhaAtual: "", senhaNova: "", confirmar: "" });
   const [perfilDialogOpen, setPerfilDialogOpen] = useState(false);
-  const [perfilForm, setPerfilForm] = useState({ nome: "", email: "", telefone: "" });
+  const [perfilForm, setPerfilForm] = useState<{ nome: string; email: string; telefone: string; foto?: string }>({ nome: "", email: "", telefone: "" });
   const [perfilLoading, setPerfilLoading] = useState(false);
+  const [selectedFotoFile, setSelectedFotoFile] = useState<File | null>(null);
+  const [previewFoto, setPreviewFoto] = useState<string | null>(null);
+  const [cropDialogOpen, setCropDialogOpen] = useState(false);
+  const [cropImageSrc, setCropImageSrc] = useState<string | null>(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
   const [ganhos, setGanhos] = useState<GanhosData | null>(null);
   const [filtroDataInicio, setFiltroDataInicio] = useState(() => {
     const d = new Date(); d.setMonth(d.getMonth() - 1);
@@ -217,10 +254,11 @@ function App() {
         throw new Error(err?.error || "Email ou senha inválidos");
       }
       const data = await res.json();
-      setUser({ nome: data.usuario.nome, role: data.usuario.role, professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf });
+      window.history.replaceState(null, "", "/");
+      setUser({ id: data.usuario.id, nome: data.usuario.nome, role: data.usuario.role, professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf, foto: data.usuario.foto ?? null });
       localStorage.setItem("user", JSON.stringify({
-        nome: data.usuario.nome, role: data.usuario.role,
-        professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf
+        id: data.usuario.id, nome: data.usuario.nome, role: data.usuario.role,
+        professorId: data.usuario.professorId, token: data.token, cpf: data.usuario.cpf, foto: data.usuario.foto ?? null
       }));
     } catch (err) {
       setLoginError(err instanceof Error ? err.message : "Erro ao fazer login");
@@ -250,6 +288,28 @@ function App() {
       setRecuperarSenhaMessage("Erro de conexão com o servidor");
     } finally {
       setRecuperarSenhaLoading(false);
+    }
+  };
+
+  const handleVerificarCodigo = async () => {
+    if (!recuperarSenhaCodigo || recuperarSenhaCodigo.length < 6) return;
+    setRecuperarSenhaMessage(null);
+    try {
+      const res = await fetch(`${backendUrl}/api/auth/verificar-codigo`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: recuperarSenhaEmail, codigo: recuperarSenhaCodigo }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setRecuperarSenhaStep(3);
+      } else {
+        setRecuperarSenhaMessage(data.error || "Código inválido");
+        setRecuperarSenhaCodigo("");
+      }
+    } catch {
+      setRecuperarSenhaMessage("Erro de conexão com o servidor");
+      setRecuperarSenhaCodigo("");
     }
   };
 
@@ -318,6 +378,20 @@ function App() {
     }
     setPerfilLoading(true);
     try {
+      if (selectedFotoFile) {
+        const formData = new FormData();
+        formData.append("foto", selectedFotoFile);
+        const uploadRes = await apiFetch(`${backendUrl}/api/upload/foto`, {
+          method: "POST",
+          body: formData,
+        });
+        if (!uploadRes.ok) {
+          const err = await uploadRes.json().catch(() => null);
+          throw new Error(err?.error || "Erro ao fazer upload");
+        }
+        const uploadData = await uploadRes.json();
+        perfilForm.foto = uploadData.foto;
+      }
       const res = await apiFetch(`${backendUrl}/api/auth/me`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -328,14 +402,18 @@ function App() {
         throw new Error(err?.error || "Erro ao atualizar perfil");
       }
       const data = await res.json();
-      setUser(p => p ? { ...p, nome: data.nome } : null);
+      setUser(p => p ? { ...p, id: data.id ?? p.id, nome: data.nome, foto: data.foto ?? p.foto } : null);
       const saved = localStorage.getItem("user");
       if (saved) {
         const u = JSON.parse(saved);
+        u.id = data.id ?? u.id;
         u.nome = data.nome;
+        u.foto = data.foto ?? u.foto;
         localStorage.setItem("user", JSON.stringify(u));
       }
       setPerfilDialogOpen(false);
+      setSelectedFotoFile(null);
+      setPreviewFoto(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao atualizar perfil");
     } finally {
@@ -1340,6 +1418,9 @@ function App() {
   };
 
   if (!user) {
+    if (location.pathname !== "/login") {
+      window.history.replaceState(null, "", "/login");
+    }
     return (
       <>
         <div className="h-screen flex items-center justify-center bg-gradient-to-br from-neutral-950 via-neutral-900 to-neutral-950 relative overflow-hidden">
@@ -1437,16 +1518,27 @@ function App() {
               </div>
             )}
             {recuperarSenhaStep === 2 && (
-              <div className="space-y-1.5">
+              <div className="flex flex-col items-center gap-1.5">
                 <Label>Código de verificação</Label>
-                <Input
-                  type="text"
-                  inputMode="numeric"
-                  placeholder="Digite o código de 6 dígitos"
+                <InputOTP
+                  maxLength={6}
+                  pattern={REGEXP_ONLY_DIGITS}
                   value={recuperarSenhaCodigo}
-                  onChange={e => setRecuperarSenhaCodigo(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                  onKeyDown={e => e.key === "Enter" && setRecuperarSenhaStep(3)}
-                />
+                  onChange={v => setRecuperarSenhaCodigo(v)}
+                  onComplete={handleVerificarCodigo}
+                >
+                  <InputOTPGroup>
+                    <InputOTPSlot index={0} />
+                    <InputOTPSlot index={1} />
+                    <InputOTPSlot index={2} />
+                  </InputOTPGroup>
+                  <InputOTPSeparator />
+                  <InputOTPGroup>
+                    <InputOTPSlot index={3} />
+                    <InputOTPSlot index={4} />
+                    <InputOTPSlot index={5} />
+                  </InputOTPGroup>
+                </InputOTP>
               </div>
             )}
             {recuperarSenhaStep === 3 && (
@@ -1521,6 +1613,10 @@ function App() {
         </div>
       </div>
     );
+  }
+
+  if (location.pathname === "/login") {
+    window.history.replaceState(null, "", "/");
   }
 
   return (
@@ -1656,8 +1752,12 @@ function App() {
                     setPerfilDialogOpen(true);
                   }}
                 >
-                  <div className="size-8 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0">
-                    <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                  <div className="size-8 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0 overflow-hidden">
+                    {user?.foto ? (
+                      <img src={`${backendUrl}/api/upload/foto/${user.id}?v=${user.foto}`} alt="foto" className="size-full object-cover" />
+                    ) : (
+                      <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                    )}
                   </div>
                   <div className="flex flex-col min-w-0 flex-1 text-left">
                     <span className="text-sm font-medium text-white/80 truncate group-hover:text-white transition-colors">{user?.nome}</span>
@@ -1696,7 +1796,7 @@ function App() {
             ) : (
               <div className="flex flex-col items-center gap-2">
                 <button
-                  className="size-9 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/20 transition-all cursor-pointer"
+                  className="size-9 rounded-full bg-gradient-to-br from-neutral-500 to-neutral-700 flex items-center justify-center shrink-0 hover:ring-2 hover:ring-white/20 transition-all cursor-pointer overflow-hidden"
                   onClick={async () => {
                     try {
                       const res = await apiFetch(`${backendUrl}/api/auth/me`);
@@ -1713,7 +1813,11 @@ function App() {
                   }}
                   title="Editar Perfil"
                 >
-                  <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                  {user?.foto ? (
+                    <img src={`${backendUrl}/api/upload/foto/${user.id}?v=${user.foto}`} alt="foto" className="size-full object-cover" />
+                  ) : (
+                    <span className="text-xs font-bold text-white">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                  )}
                 </button>
                 <Button
                   variant="ghost"
@@ -1875,7 +1979,7 @@ function App() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={perfilDialogOpen} onOpenChange={v => { setPerfilDialogOpen(v); if (!v) setPerfilForm({ nome: "", email: "", telefone: "" }); }}>
+      <Dialog open={perfilDialogOpen} onOpenChange={v => { setPerfilDialogOpen(v); if (!v) { setPerfilForm({ nome: "", email: "", telefone: "" }); setSelectedFotoFile(null); setCropDialogOpen(false); if (cropImageSrc) { URL.revokeObjectURL(cropImageSrc); setCropImageSrc(null); } if (previewFoto) { URL.revokeObjectURL(previewFoto); setPreviewFoto(null); } } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <div className="flex items-center gap-3">
@@ -1888,6 +1992,36 @@ function App() {
             </div>
           </DialogHeader>
           <div className="space-y-3 px-6 pb-6">
+            <div className="flex flex-col items-center gap-2">
+              <div className="size-16 rounded-full bg-muted/50 border border-border/40 flex items-center justify-center overflow-hidden">
+                {previewFoto ? (
+                  <img src={previewFoto} alt="foto" className="size-full object-cover" />
+                ) : user?.foto ? (
+                  <img src={`${backendUrl}/api/upload/foto/${user.id}?v=${user.foto}`} alt="foto" className="size-full object-cover" />
+                ) : (
+                  <span className="text-lg font-bold text-muted-foreground/50">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                )}
+              </div>
+              <label className="cursor-pointer">
+                <span className="text-xs text-primary hover:underline">Alterar foto</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setCropImageSrc(URL.createObjectURL(file));
+                      setCrop({ x: 0, y: 0 });
+                      setZoom(0.5);
+                      setCroppedAreaPixels(null);
+                      setCropDialogOpen(true);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
             <div className="space-y-1.5">
               <Label className="text-xs font-medium">Nome</Label>
               <Input value={perfilForm.nome} onChange={e => setPerfilForm(p => ({ ...p, nome: e.target.value }))} />
@@ -1916,6 +2050,60 @@ function App() {
             <Button onClick={handleEditarPerfil} disabled={perfilLoading} className="shadow-xs">
               {perfilLoading ? "Salvando..." : "Salvar"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={cropDialogOpen} onOpenChange={v => { setCropDialogOpen(v); if (!v && cropImageSrc) { URL.revokeObjectURL(cropImageSrc); setCropImageSrc(null); } }}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Editar foto</DialogTitle>
+            <DialogDescription>Ajuste o enquadramento da foto.</DialogDescription>
+          </DialogHeader>
+          <div className="relative w-full h-72 overflow-hidden rounded-md bg-black/10">
+            {cropImageSrc && (
+              <Cropper
+                image={cropImageSrc}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                cropShape="round"
+                showGrid
+                minZoom={0.3}
+                maxZoom={4}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={(_croppedArea, croppedAreaPixels) => setCroppedAreaPixels(croppedAreaPixels)}
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">Zoom</span>
+            <input
+              type="range"
+              min={0.3}
+              max={4}
+              step={0.05}
+              value={zoom}
+              onChange={e => setZoom(Number(e.target.value))}
+              className="flex-1"
+            />
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setCropDialogOpen(false); if (cropImageSrc) { URL.revokeObjectURL(cropImageSrc); setCropImageSrc(null); } }}>Cancelar</Button>
+            <Button onClick={async () => {
+              if (!cropImageSrc || !croppedAreaPixels) return;
+              try {
+                const blob = await createCroppedBlob(cropImageSrc, croppedAreaPixels);
+                const file = new File([blob], "foto.jpg", { type: "image/jpeg" });
+                setSelectedFotoFile(file);
+                setPreviewFoto(URL.createObjectURL(blob));
+                setCropDialogOpen(false);
+                if (cropImageSrc) { URL.revokeObjectURL(cropImageSrc); setCropImageSrc(null); }
+              } catch {
+                setError("Erro ao processar imagem");
+              }
+            }}>Confirmar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -1972,13 +2160,43 @@ function App() {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={perfilDialogOpen} onOpenChange={v => { setPerfilDialogOpen(v); if (!v) setError(null); }}>
+      <Dialog open={perfilDialogOpen} onOpenChange={v => { setPerfilDialogOpen(v); if (!v) { setError(null); setSelectedFotoFile(null); setCropDialogOpen(false); if (cropImageSrc) { URL.revokeObjectURL(cropImageSrc); setCropImageSrc(null); } if (previewFoto) { URL.revokeObjectURL(previewFoto); setPreviewFoto(null); } } }}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Editar Perfil</DialogTitle>
             <DialogDescription>Atualize suas informações pessoais.</DialogDescription>
           </DialogHeader>
           <div className="space-y-3 py-2">
+            <div className="flex flex-col items-center gap-2">
+              <div className="size-16 rounded-full bg-muted/50 border border-border/40 flex items-center justify-center overflow-hidden">
+                {previewFoto ? (
+                  <img src={previewFoto} alt="foto" className="size-full object-cover" />
+                ) : user?.foto ? (
+                  <img src={`${backendUrl}/api/upload/foto/${user.id}?v=${user.foto}`} alt="foto" className="size-full object-cover" />
+                ) : (
+                  <span className="text-lg font-bold text-muted-foreground/50">{user?.nome?.charAt(0)?.toUpperCase() || "U"}</span>
+                )}
+              </div>
+              <label className="cursor-pointer">
+                <span className="text-xs text-primary hover:underline">Alterar foto</span>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={e => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      setCropImageSrc(URL.createObjectURL(file));
+                      setCrop({ x: 0, y: 0 });
+                      setZoom(0.5);
+                      setCroppedAreaPixels(null);
+                      setCropDialogOpen(true);
+                    }
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+            </div>
             <div className="space-y-1.5">
               <Label>Nome</Label>
               <Input value={perfilForm.nome} onChange={e => setPerfilForm(p => ({ ...p, nome: e.target.value }))} />
