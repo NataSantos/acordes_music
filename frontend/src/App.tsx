@@ -62,14 +62,16 @@ type Agendamento = {
 
 type GanhosResumo = {
   totalBruto: number;
+  totalLiquido: number;
   totalAulas: number;
   totalHoras: number;
   mediaPorAula: number;
+  mediaAlunoMes: number;
   periodo: { de: string | null; ate: string | null };
 };
 
-type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number };
-type GanhosMes = { mes: string; aulas: number; valor: number };
+type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number; professorShare: number };
+type GanhosMes = { mes: string; aulas: number; valor: number; professorShare: number };
 
 type GanhosData = {
   resumo: GanhosResumo;
@@ -155,8 +157,8 @@ function App() {
     professorId: "", alunoId: "", salaId: "",
     data: "", horario: "", duracao: "60", valor: "", observacao: "",
   });
-  const [repetirSemanal, setRepetirSemanal] = useState(false);
-  const [repetirSemanas, setRepetirSemanas] = useState(4);
+  const [repetirSemanas, setRepetirSemanas] = useState(12);
+  const [aulaExperimental, setAulaExperimental] = useState(false);
   const [user, setUser] = useState<{ id: string; nome: string; role: string; professorId: string | null; token: string; cpf: string; foto: string | null } | null>(() => {
     const saved = localStorage.getItem("user");
     return saved ? JSON.parse(saved) : null;
@@ -200,6 +202,9 @@ function App() {
       setGanhosLoading(true);
       try {
         const params = new URLSearchParams({ dataInicio: filtroDataInicio, dataFim: filtroDataFim });
+        if (user.role === "PROFESSOR" && user.professorId) {
+          params.set("professorId", user.professorId);
+        }
         const res = await apiFetch(`${backendUrl}/api/ganhos?${params}`);
         if (res.ok) setGanhos(await res.json());
       } catch (err) {
@@ -466,8 +471,8 @@ function App() {
   const resetForm = () => {
     setEditingId(null);
     setConflitos([]);
-    setRepetirSemanal(false);
-    setRepetirSemanas(4);
+    setRepetirSemanas(12);
+    setAulaExperimental(false);
     setForm({
       nome: "", descricao: "", capacidade: "",
       cpf: "", email: "", telefone: "", profissao: "", matricula: "",
@@ -642,14 +647,15 @@ function App() {
         payload = {
           professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
           data: form.data, horario: form.horario, duracao: Number(form.duracao) || 60,
-          valor: form.valor ? Number(form.valor) : null,
+          valor: aulaExperimental ? 0 : (form.valor ? Number(form.valor) : null),
           observacao: form.observacao || null,
         };
       }
 
-      if (section === "agendamentos" && repetirSemanal && !editingId) {
+      if (section === "agendamentos" && !editingId) {
+        const totalAulas = aulaExperimental ? 1 : repetirSemanas;
         const datas: string[] = [form.data];
-        for (let i = 1; i < repetirSemanas; i++) {
+        for (let i = 1; i < totalAulas; i++) {
           const d = new Date(form.data.slice(0, 10) + "T12:00:00");
           d.setDate(d.getDate() + i * 7);
           datas.push(d.toISOString().slice(0, 10));
@@ -896,14 +902,7 @@ function App() {
                                           <span className="text-muted-foreground text-[10px] block leading-tight uppercase tracking-wider">Aluno</span>
                                           <span className="font-medium truncate block text-sm">{a.aluno.usuario.nome}</span>
                                         </div>
-                                        <div className="flex items-center gap-2">
-                                          {a.valor != null && (
-                                            <span className="text-xs font-mono text-muted-foreground">
-                                              {a.valor.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}
-                                            </span>
-                                          )}
-                                          <Badge className={`${statusBadge[a.status]} text-[10px] px-2 py-0.5 shrink-0`}>{statusLabel[a.status]}</Badge>
-                                        </div>
+                                        <Badge className={`${statusBadge[a.status]} text-[10px] px-2 py-0.5 shrink-0`}>{statusLabel[a.status]}</Badge>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
                                             <Button variant="ghost" size="sm" className="size-7 p-0 shrink-0 self-center rounded-md hover:bg-muted/50">
@@ -1020,6 +1019,14 @@ function App() {
   };
 
   const renderFinanceiro = () => {
+    if (ganhosLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <span className="size-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin mb-4" />
+          <p>Carregando dados financeiros...</p>
+        </div>
+      );
+    }
     if (!ganhos) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -1030,24 +1037,6 @@ function App() {
     }
 
     const fmtValor = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
-    const ocupacaoDiaria = ganhos.aulas.reduce<Record<string, typeof ganhos.aulas>>((acc, a) => {
-      const d = a.data.slice(0, 10);
-      if (!acc[d]) acc[d] = [];
-      acc[d].push(a);
-      return acc;
-    }, {});
-
-    const diasOrdenados = Object.keys(ocupacaoDiaria).sort().reverse();
-
-    const maxProfessorValor = Math.max(...ganhos.porProfessor.map(p => p.valor), 0);
-    const maxMesValor = Math.max(...ganhos.porMes.map(m => m.valor), 0);
-
-    const mesLabels: Record<string, string> = {
-      "01": "Jan", "02": "Fev", "03": "Mar", "04": "Abr",
-      "05": "Mai", "06": "Jun", "07": "Jul", "08": "Ago",
-      "09": "Set", "10": "Out", "11": "Nov", "12": "Dez",
-    };
 
     return (
       <div className="space-y-6">
@@ -1089,10 +1078,10 @@ function App() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Receita Bruta", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign },
+            { label: "Ganhos Brutos", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign },
+            { label: "Ganhos Líquidos", value: fmtValor(ganhos.resumo.totalLiquido), icon: Wallet },
             { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas" },
-            { label: "Horas Totais", value: `${ganhos.resumo.totalHoras}h`, icon: Clock },
-            { label: "Média por Aula", value: fmtValor(ganhos.resumo.mediaPorAula), icon: TrendingUp },
+            { label: "Média Aluno/Mês", value: fmtValor(ganhos.resumo.mediaAlunoMes), icon: TrendingUp },
           ].map(card => (
             <Card key={card.label} className="shadow-sm border-border/60 overflow-hidden">
               <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
@@ -1110,158 +1099,28 @@ function App() {
           ))}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
-                <GraduationCap className="size-4" />
-                <span className="font-semibold uppercase tracking-wider">Por Professor</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {ganhos.porProfessor.length === 0 ? (
-                <div className="flex flex-col items-center py-10 text-muted-foreground/50">
-                  <GraduationCap className="size-8 mb-2" />
-                  <p className="text-sm">Nenhum dado no período</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/40">
-                  {ganhos.porProfessor.map(p => (
-                    <div key={p.id} className="px-4 py-3.5 space-y-2 hover:bg-muted/20 transition-colors">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-medium truncate">{p.nome}</span>
-                        <span className="font-mono text-sm font-semibold tabular-nums">{fmtValor(p.valor)}</span>
-                      </div>
-                      <div className="flex items-center gap-3 text-xs text-muted-foreground/60">
-                        <span>{p.aulas} aula{p.aulas !== 1 ? "s" : ""}</span>
-                        <span className="text-muted-foreground/20">/</span>
-                        <span>{p.horas}h</span>
-                        <span className="text-muted-foreground/20">/</span>
-                        <span>{maxProfessorValor > 0 ? Math.round((p.valor / maxProfessorValor) * 100) : 0}% do total</span>
-                      </div>
-                      <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-muted-foreground/20 rounded-full transition-all duration-500"
-                          style={{ width: `${maxProfessorValor > 0 ? (p.valor / maxProfessorValor) * 100 : 0}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          <Card className="shadow-sm border-border/60 overflow-hidden">
-            <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
-                <TrendingUp className="size-4" />
-                <span className="font-semibold uppercase tracking-wider">Por Mês</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              {ganhos.porMes.length === 0 ? (
-                <div className="flex flex-col items-center py-10 text-muted-foreground/50">
-                  <TrendingUp className="size-8 mb-2" />
-                  <p className="text-sm">Nenhum dado no período</p>
-                </div>
-              ) : (
-                <div className="divide-y divide-border/40">
-                  {ganhos.porMes.map(m => {
-                    const [ano, mesNum] = m.mes.split("-");
-                    const mesLabel = mesLabels[mesNum] || mesNum;
-                    return (
-                      <div key={m.mes} className="px-4 py-3.5 space-y-2 hover:bg-muted/20 transition-colors">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm font-medium">{mesLabel} <span className="text-muted-foreground/50">{ano}</span></span>
-                          <span className="font-mono text-sm font-semibold tabular-nums">{fmtValor(m.valor)}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-xs text-muted-foreground/60">
-                          <span>{m.aulas} aula{m.aulas !== 1 ? "s" : ""}</span>
-                          <span className="tabular-nums">{maxMesValor > 0 ? Math.round((m.valor / maxMesValor) * 100) : 0}% do maior mês</span>
-                        </div>
-                        <div className="h-1.5 w-full bg-muted/50 rounded-full overflow-hidden">
-                          <div
-                            className="h-full bg-muted-foreground/20 rounded-full transition-all duration-500"
-                            style={{ width: `${maxMesValor > 0 ? (m.valor / maxMesValor) * 100 : 0}%` }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-
         <Card className="shadow-sm border-border/60 overflow-hidden">
           <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
-              <CalendarClock className="size-4" />
-              <span className="font-semibold uppercase tracking-wider">Ocupação Diária</span>
+              <GraduationCap className="size-4" />
+              <span className="font-semibold uppercase tracking-wider">Por Professor</span>
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            {diasOrdenados.length === 0 ? (
+          <CardContent className="p-0">
+            {ganhos.porProfessor.length === 0 ? (
               <div className="flex flex-col items-center py-10 text-muted-foreground/50">
-                <CalendarDays className="size-8 mb-2" />
-                <p className="text-sm">Nenhuma aula no período</p>
+                <GraduationCap className="size-8 mb-2" />
+                <p className="text-sm">Nenhum dado no período</p>
               </div>
             ) : (
-              <div className="space-y-3">
-                {diasOrdenados.map(dia => {
-                  const aulas = ocupacaoDiaria[dia];
-                  const totalDia = aulas.reduce((s, a) => s + (a.valor ?? 0), 0);
-                  const hoje = new Date().toISOString().slice(0, 10) === dia;
-                  return (
-                    <div key={dia} className={`rounded-xl border ${hoje ? "border-foreground/20 bg-muted/5" : "border-border/50"} overflow-hidden transition-all`}>
-                      <div className={`px-4 py-2.5 flex items-center justify-between ${hoje ? "bg-muted/20" : "bg-muted/10"}`}>
-                        <div className="flex items-center gap-2.5">
-                          <div className={`size-2 rounded-full ${hoje ? "bg-foreground" : "bg-muted-foreground/20"}`} />
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold capitalize">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR", { weekday: "long" })}</span>
-                            <span className="text-sm text-muted-foreground/60">{new Date(dia + "T12:00:00").toLocaleDateString("pt-BR")}</span>
-                          </div>
-                          {hoje && (
-                            <div className="text-[10px] font-semibold uppercase tracking-wider bg-foreground text-background px-1.5 py-0.5 rounded">Hoje</div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-4 text-sm">
-                          <span className="text-muted-foreground/60">
-                            {aulas.length} aula{aulas.length !== 1 ? "s" : ""}
-                          </span>
-                          <span className="font-semibold font-mono tabular-nums">{fmtValor(totalDia)}</span>
-                        </div>
-                      </div>
-                      <div className="divide-x divide-border/30 grid grid-flow-col auto-cols-fr">
-                        {aulas.map(a => (
-                          <div key={a.id} className="px-3 py-3 space-y-1.5 text-xs hover:bg-muted/10 transition-colors">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="font-mono font-semibold text-sm tabular-nums">{a.horario}</span>
-                              <span className="text-muted-foreground/50 font-mono text-[11px]">{a.valor != null ? fmtValor(a.valor) : "—"}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
-                              <GraduationCap className="size-3 shrink-0" />
-                              <span className="truncate">{a.professor.usuario.nome}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
-                              <BookUser className="size-3 shrink-0" />
-                              <span className="truncate">{a.aluno.usuario.nome}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 text-muted-foreground/60">
-                              <Building2 className="size-3 shrink-0" />
-                              <span className="truncate">{a.sala.nome}</span>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  );
-                })}
+              <div className="divide-y divide-border/40">
+                {ganhos.porProfessor.map(p => (
+                  <div key={p.id} className="px-4 py-3.5 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                    <span className="text-sm font-medium truncate">{p.nome}</span>
+                    <span className="font-mono text-sm font-semibold tabular-nums">{fmtValor(p.professorShare)}</span>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -1317,10 +1176,6 @@ function App() {
             <Label>Duração (min)</Label>
             <Input type="number" min={1} value={form.duracao} onChange={e => handleFormField("duracao", e.target.value)} />
           </div>
-          <div className="space-y-2">
-            <Label>Valor (R$)</Label>
-            <Input type="number" step="0.01" min={0} value={form.valor} onChange={e => handleFormField("valor", e.target.value)} placeholder="0,00" />
-          </div>
           <div className="space-y-2 col-span-2">
             <Label>Observação</Label>
             <Input value={form.observacao} onChange={e => handleFormField("observacao", e.target.value)} placeholder="Observações sobre a aula..." />
@@ -1331,23 +1186,24 @@ function App() {
                 <input
                   type="checkbox"
                   className="size-4 accent-neutral-900"
-                  checked={repetirSemanal}
-                  onChange={e => setRepetirSemanal(e.target.checked)}
+                  checked={aulaExperimental}
+                  onChange={e => setAulaExperimental(e.target.checked)}
                 />
-                <span>Repetir semanalmente</span>
+                <span>Aula experimental (1 aula)</span>
               </Label>
-              {repetirSemanal && (
+              {!aulaExperimental && (
                 <div className="flex items-center gap-1.5 text-sm">
-                  <span>por</span>
+                  <span>Contrato:</span>
                   <Input
                     type="number"
-                    min={2}
+                    min={12}
                     max={52}
                     className="w-16 h-8 text-center text-sm"
                     value={String(repetirSemanas)}
-                    onChange={e => setRepetirSemanas(Number(e.target.value) || 4)}
+                    onChange={e => setRepetirSemanas(Number(e.target.value) || 12)}
+                    onBlur={e => { const v = Number(e.target.value); if (v < 12) setRepetirSemanas(12); }}
                   />
-                  <span className="text-muted-foreground">semanas</span>
+                  <span className="text-muted-foreground">aulas (mín. 12)</span>
                 </div>
               )}
             </div>

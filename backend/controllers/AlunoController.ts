@@ -87,11 +87,16 @@ export default function AlunoController(prisma: PrismaClient): Router {
   router.delete("/:id", authMiddleware, async (req, res) => {
     const id = req.params.id as string;
     try {
-      const agendamentos = await prisma.agendamento.count({ where: { alunoId: id } });
-      if (agendamentos > 0) {
-        return res.status(409).json({ error: "Aluno possui agendamentos vinculados. Remova-os antes de excluir." });
-      }
+      const aluno = await prisma.aluno.findUnique({
+        where: { id },
+        include: { usuario: true },
+      });
+      if (!aluno) return res.status(404).json(notFound());
+
+      await prisma.agendamento.deleteMany({ where: { alunoId: id } });
       await prisma.aluno.delete({ where: { id } });
+      await prisma.usuario.delete({ where: { id: aluno.usuarioId } });
+
       return res.status(204).send();
     } catch (error) {
       console.error("Erro ao remover aluno:", error);
