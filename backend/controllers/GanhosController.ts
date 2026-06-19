@@ -37,27 +37,32 @@ export default function GanhosController(prisma: PrismaClient): Router {
         orderBy: { data: "desc" },
       });
 
-      const valorMensal = 240;
+      const VALOR_MENSAL = 240;
+      const TAXA_ESCOLA = 0.3;
+
       const totalAulas = agendamentos.length;
       const totalHoras = agendamentos.reduce((acc, a) => acc + a.duracao, 0);
 
+      const aulasPorProfessor = new Map<string, typeof agendamentos>();
       const alunoMesPorProfessor = new Map<string, Set<string>>();
       const alunoMesPorMes = new Map<string, Set<string>>();
-      const aulasPorProfessor = new Map<string, number>();
       const aulasPorMes = new Map<string, number>();
 
       for (const a of agendamentos) {
-        if (a.valor === 0) continue;
+        if ((a.valor ?? VALOR_MENSAL) === 0) continue;
 
-        const pid = a.professorId;
         const mes = a.data.toISOString().slice(0, 7);
         const chave = `${a.alunoId}-${mes}`;
 
-        aulasPorProfessor.set(pid, (aulasPorProfessor.get(pid) ?? 0) + 1);
+        if (!aulasPorProfessor.has(a.professorId)) {
+          aulasPorProfessor.set(a.professorId, []);
+        }
+        aulasPorProfessor.get(a.professorId)!.push(a);
+
         aulasPorMes.set(mes, (aulasPorMes.get(mes) ?? 0) + 1);
 
-        if (!alunoMesPorProfessor.has(pid)) alunoMesPorProfessor.set(pid, new Set());
-        alunoMesPorProfessor.get(pid)!.add(chave);
+        if (!alunoMesPorProfessor.has(a.professorId)) alunoMesPorProfessor.set(a.professorId, new Set());
+        alunoMesPorProfessor.get(a.professorId)!.add(chave);
 
         if (!alunoMesPorMes.has(mes)) alunoMesPorMes.set(mes, new Set());
         alunoMesPorMes.get(mes)!.add(chave);
@@ -66,32 +71,51 @@ export default function GanhosController(prisma: PrismaClient): Router {
       let totalAlunoMes = 0;
       for (const set of alunoMesPorProfessor.values()) totalAlunoMes += set.size;
 
-      const totalBruto = totalAlunoMes * valorMensal;
+      const totalBruto = totalAlunoMes * VALOR_MENSAL;
+      const totalLiquidoEscola = Math.round(totalBruto * TAXA_ESCOLA * 100) / 100;
 
-      const porProfessor = Array.from(alunoMesPorProfessor.entries()).map(([id, set]) => ({
-        id,
-        nome: agendamentos.find(a => a.professorId === id)?.professor.usuario.nome ?? "",
-        aulas: aulasPorProfessor.get(id) ?? 0,
-        horas: agendamentos.filter(a => a.professorId === id).reduce((s, a) => s + a.duracao, 0),
-        valor: set.size * valorMensal,
-        professorShare: Math.round(set.size * valorMensal * 0.7 * 100) / 100,
-      }));
+      const porProfessor = Array.from(alunoMesPorProfessor.entries()).map(([id, set]) => {
+        const aulas = aulasPorProfessor.get(id) ?? [];
+        const aulasCount = aulas.length;
+        const horas = aulas.reduce((s, a) => s + a.duracao, 0);
+        const alunoMeses = set.size;
+        const valor = alunoMeses * VALOR_MENSAL;
+        const porcentagem = totalBruto > 0 ? Math.round((valor / totalBruto) * 10000) / 100 : 0;
+        const professorShare = Math.round(valor * (1 - TAXA_ESCOLA) * 100) / 100;
 
-      const porMes = Array.from(alunoMesPorMes.entries()).map(([mes, set]) => ({
-        mes,
-        aulas: aulasPorMes.get(mes) ?? 0,
-        valor: set.size * valorMensal,
-        professorShare: Math.round(set.size * valorMensal * 0.7 * 100) / 100,
-      })).sort((a, b) => a.mes.localeCompare(b.mes));
+        return {
+          id,
+          nome: aulas[0]?.professor.usuario.nome ?? "",
+          aulas: aulasCount,
+          horas,
+          valor: Math.round(valor * 100) / 100,
+          alunoMeses,
+          porcentagem,
+          professorShare,
+        };
+      });
+
+      porProfessor.sort((a, b) => b.valor - a.valor);
+
+      const porMes = Array.from(alunoMesPorMes.entries()).map(([mes, set]) => {
+        const valor = set.size * VALOR_MENSAL;
+        return {
+          mes,
+          aulas: aulasPorMes.get(mes) ?? 0,
+          valor: Math.round(valor * 100) / 100,
+          professorShare: Math.round(valor * (1 - TAXA_ESCOLA) * 100) / 100,
+        };
+      }).sort((a, b) => a.mes.localeCompare(b.mes));
 
       return res.json({
         resumo: {
           totalBruto: Math.round(totalBruto * 100) / 100,
-          totalLiquido: Math.round(totalBruto * 0.7 * 100) / 100,
+          totalLiquidoEscola,
+          totalLiquidoProfessor: Math.round(totalBruto * (1 - TAXA_ESCOLA) * 100) / 100,
           totalAulas,
           totalHoras,
           mediaPorAula: totalAulas > 0 ? Math.round((totalBruto / totalAulas) * 100) / 100 : 0,
-          mediaAlunoMes: totalAlunoMes > 0 ? Math.round((totalBruto / totalAlunoMes) * 100) / 100 : 240,
+          mediaAlunoMes: totalAlunoMes > 0 ? VALOR_MENSAL : 0,
           periodo: {
             de: dataInicio ?? null,
             ate: dataFim ?? null,

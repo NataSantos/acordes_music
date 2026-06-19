@@ -62,7 +62,8 @@ type Agendamento = {
 
 type GanhosResumo = {
   totalBruto: number;
-  totalLiquido: number;
+  totalLiquidoEscola: number;
+  totalLiquidoProfessor: number;
   totalAulas: number;
   totalHoras: number;
   mediaPorAula: number;
@@ -70,7 +71,7 @@ type GanhosResumo = {
   periodo: { de: string | null; ate: string | null };
 };
 
-type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number; professorShare: number };
+type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number; professorShare: number; porcentagem: number; alunoMeses: number };
 type GanhosMes = { mes: string; aulas: number; valor: number; professorShare: number };
 
 type GanhosData = {
@@ -884,7 +885,7 @@ function App() {
                                     return (
                                       <div
                                         key={a.id}
-                                        className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto] gap-3 px-4 py-2.5 items-center text-sm hover:bg-muted/20 transition-colors"
+                                        className="grid grid-cols-[auto_1fr_1fr_1fr_auto_auto_auto] gap-3 px-4 py-2.5 items-center text-sm hover:bg-muted/20 transition-colors"
                                       >
                                         <div className="flex items-center gap-1.5 min-w-[56px]">
                                           <span className="font-mono text-sm font-semibold">{a.horario}</span>
@@ -902,6 +903,7 @@ function App() {
                                           <span className="text-muted-foreground text-[10px] block leading-tight uppercase tracking-wider">Aluno</span>
                                           <span className="font-medium truncate block text-sm">{a.aluno.usuario.nome}</span>
                                         </div>
+                                        {a.valor ? <span className="font-mono text-xs tabular-nums text-muted-foreground shrink-0">R$ {Number(a.valor).toFixed(2).replace('.', ',')}</span> : <span className="text-[10px] text-muted-foreground/30 shrink-0">—</span>}
                                         <Badge className={`${statusBadge[a.status]} text-[10px] px-2 py-0.5 shrink-0`}>{statusLabel[a.status]}</Badge>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
@@ -1078,10 +1080,10 @@ function App() {
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {[
-            { label: "Ganhos Brutos", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign },
-            { label: "Ganhos Líquidos", value: fmtValor(ganhos.resumo.totalLiquido), icon: Wallet },
-            { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas" },
-            { label: "Média Aluno/Mês", value: fmtValor(ganhos.resumo.mediaAlunoMes), icon: TrendingUp },
+            { label: "Valor Bruto", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign, subtitle: "Faturamento total" },
+            { label: "Líquido (Escola)", value: fmtValor(ganhos.resumo.totalLiquidoEscola), icon: TrendingUp, subtitle: "30% de comissão" },
+            { label: "Professores", value: fmtValor(ganhos.resumo.totalLiquidoProfessor), icon: GraduationCap, subtitle: "70% repassado" },
+            { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas", subtitle: `${ganhos.resumo.totalHoras}h no período` },
           ].map(card => (
             <Card key={card.label} className="shadow-sm border-border/60 overflow-hidden">
               <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
@@ -1093,7 +1095,7 @@ function App() {
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-2xl font-bold tracking-tight">{card.value}</p>
-                {card.suffix && <p className="text-xs text-muted-foreground/60 mt-0.5">{card.suffix}</p>}
+                <p className="text-xs text-muted-foreground/60 mt-0.5">{card.subtitle ?? ""}{card.suffix ?? ""}</p>
               </CardContent>
             </Card>
           ))}
@@ -1115,16 +1117,59 @@ function App() {
               </div>
             ) : (
               <div className="divide-y divide-border/40">
+                <div className="grid grid-cols-[1fr_90px_90px] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
+                  <span>Professor</span>
+                  <span className="text-right">Valor Bruto</span>
+                  <span className="text-right">Ganho (70%)</span>
+                </div>
                 {ganhos.porProfessor.map(p => (
-                  <div key={p.id} className="px-4 py-3.5 flex items-center justify-between hover:bg-muted/20 transition-colors">
-                    <span className="text-sm font-medium truncate">{p.nome}</span>
-                    <span className="font-mono text-sm font-semibold tabular-nums">{fmtValor(p.professorShare)}</span>
+                  <div key={p.id} className="px-4 py-3 grid grid-cols-[1fr_90px_90px] gap-3 items-center hover:bg-muted/20 transition-colors">
+                    <div className="min-w-0">
+                      <span className="text-sm font-medium truncate block">{p.nome}</span>
+                      <span className="text-[10px] text-muted-foreground/50">{p.alunoMeses} aluno{String(p.alunoMeses) !== "1" ? "s" : ""}-mês · {p.aulas} aula{String(p.aulas) !== "1" ? "s" : ""}</span>
+                    </div>
+                    <span className="font-mono text-sm text-right text-muted-foreground">{fmtValor(p.valor)}</span>
+                    <span className="font-mono text-sm font-semibold tabular-nums text-right">{fmtValor(p.professorShare)}</span>
                   </div>
                 ))}
               </div>
             )}
           </CardContent>
         </Card>
+
+        {/* Por Mês */}
+        {ganhos.porMes.length > 0 && (
+          <Card className="shadow-sm border-border/60 overflow-hidden">
+            <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                <CalendarDays className="size-4" />
+                <span className="font-semibold uppercase tracking-wider">Por Mês</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="divide-y divide-border/40">
+                <div className="grid grid-cols-[1fr_60px_1fr] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
+                  <span>Mês</span>
+                  <span className="text-right">Aulas</span>
+                  <span className="text-right">Receita</span>
+                </div>
+                {ganhos.porMes.map(m => {
+                  const [ano, mes] = m.mes.split("-");
+                  const nomeMes = new Date(Number(ano), Number(mes) - 1).toLocaleDateString("pt-BR", { month: "long" });
+                  return (
+                    <div key={m.mes} className="grid grid-cols-[1fr_60px_1fr] gap-3 px-4 py-3 items-center hover:bg-muted/20 transition-colors">
+                      <span className="text-sm font-medium capitalize">{nomeMes} {ano}</span>
+                      <span className="text-sm font-mono tabular-nums text-right">{m.aulas}</span>
+                      <span className="font-mono text-sm font-semibold tabular-nums text-right">{fmtValor(m.professorShare)}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
       </div>
     );
   };
@@ -1175,6 +1220,10 @@ function App() {
           <div className="space-y-2">
             <Label>Duração (min)</Label>
             <Input type="number" min={1} value={form.duracao} onChange={e => handleFormField("duracao", e.target.value)} />
+          </div>
+          <div className="space-y-2">
+            <Label>Valor (R$)</Label>
+            <Input type="number" min={0} step={0.01} value={form.valor} onChange={e => handleFormField("valor", e.target.value)} placeholder="Ex: 240" />
           </div>
           <div className="space-y-2 col-span-2">
             <Label>Observação</Label>
