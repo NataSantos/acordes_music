@@ -56,8 +56,27 @@ model Aluno {
   usuario   Usuario  @relation(fields: [usuarioId], references: [id])
   createdAt DateTime @default(now())
   matricula  String?
+  redeSocial String?
+  diaPagamento Int?
 
   agendamentos Agendamento[]
+  pagamentos   Pagamento[]
+}
+
+model Pagamento {
+  id        String   @id @default(uuid())
+  alunoId   String
+  mes       Int
+  ano       Int
+  pago      Boolean  @default(false)
+  pagoEm    DateTime @default(now())
+  valor     Float?
+  tipoPagamento String?
+  comprovanteUrl String?
+
+  aluno Aluno @relation(fields: [alunoId], references: [id])
+
+  @@unique([alunoId, mes, ano])
 }
 
 enum AgendamentoStatus {

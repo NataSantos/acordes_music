@@ -150,11 +150,36 @@ export type DateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
 }
 
-export type EnumAgendamentoStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.AgendamentoStatus[]
-  notIn?: $Enums.AgendamentoStatus[]
-  not?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel> | $Enums.AgendamentoStatus
+export type IntNullableFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntNullableFilter<$PrismaModel> | number | null
+}
+
+export type IntNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
+}
+
+export type BoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
 }
 
 export type FloatNullableFilter<$PrismaModel = never> = {
@@ -168,14 +193,12 @@ export type FloatNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
 }
 
-export type EnumAgendamentoStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.AgendamentoStatus[]
-  notIn?: $Enums.AgendamentoStatus[]
-  not?: Prisma.NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel> | $Enums.AgendamentoStatus
+export type BoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
   _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
 export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -192,6 +215,23 @@ export type FloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _min?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _max?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+}
+
+export type EnumAgendamentoStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel> | $Enums.AgendamentoStatus
+}
+
+export type EnumAgendamentoStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel> | $Enums.AgendamentoStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
 }
 
 export type NestedStringFilter<$PrismaModel = never> = {
@@ -347,11 +387,20 @@ export type NestedDateTimeWithAggregatesFilter<$PrismaModel = never> = {
   _max?: Prisma.NestedDateTimeFilter<$PrismaModel>
 }
 
-export type NestedEnumAgendamentoStatusFilter<$PrismaModel = never> = {
-  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.AgendamentoStatus[]
-  notIn?: $Enums.AgendamentoStatus[]
-  not?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel> | $Enums.AgendamentoStatus
+export type NestedIntNullableWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: number | Prisma.IntFieldRefInput<$PrismaModel> | null
+  in?: number[] | null
+  notIn?: number[] | null
+  lt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  lte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gt?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  gte?: number | Prisma.IntFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedIntNullableWithAggregatesFilter<$PrismaModel> | number | null
+  _count?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _avg?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+  _sum?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _min?: Prisma.NestedIntNullableFilter<$PrismaModel>
+  _max?: Prisma.NestedIntNullableFilter<$PrismaModel>
 }
 
 export type NestedFloatNullableFilter<$PrismaModel = never> = {
@@ -365,14 +414,17 @@ export type NestedFloatNullableFilter<$PrismaModel = never> = {
   not?: Prisma.NestedFloatNullableFilter<$PrismaModel> | number | null
 }
 
-export type NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel = never> = {
-  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
-  in?: $Enums.AgendamentoStatus[]
-  notIn?: $Enums.AgendamentoStatus[]
-  not?: Prisma.NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel> | $Enums.AgendamentoStatus
+export type NestedBoolFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolFilter<$PrismaModel> | boolean
+}
+
+export type NestedBoolWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: boolean | Prisma.BooleanFieldRefInput<$PrismaModel>
+  not?: Prisma.NestedBoolWithAggregatesFilter<$PrismaModel> | boolean
   _count?: Prisma.NestedIntFilter<$PrismaModel>
-  _min?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
-  _max?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+  _min?: Prisma.NestedBoolFilter<$PrismaModel>
+  _max?: Prisma.NestedBoolFilter<$PrismaModel>
 }
 
 export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
@@ -389,6 +441,23 @@ export type NestedFloatNullableWithAggregatesFilter<$PrismaModel = never> = {
   _sum?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _min?: Prisma.NestedFloatNullableFilter<$PrismaModel>
   _max?: Prisma.NestedFloatNullableFilter<$PrismaModel>
+}
+
+export type NestedEnumAgendamentoStatusFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel> | $Enums.AgendamentoStatus
+}
+
+export type NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel = never> = {
+  equals?: $Enums.AgendamentoStatus | Prisma.EnumAgendamentoStatusFieldRefInput<$PrismaModel>
+  in?: $Enums.AgendamentoStatus[]
+  notIn?: $Enums.AgendamentoStatus[]
+  not?: Prisma.NestedEnumAgendamentoStatusWithAggregatesFilter<$PrismaModel> | $Enums.AgendamentoStatus
+  _count?: Prisma.NestedIntFilter<$PrismaModel>
+  _min?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
+  _max?: Prisma.NestedEnumAgendamentoStatusFilter<$PrismaModel>
 }
 
 

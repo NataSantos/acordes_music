@@ -23,7 +23,7 @@ export default function AlunoController(prisma: PrismaClient): Router {
 
   router.post("/", authMiddleware, async (req, res) => {
     try {
-      const { cpf, nome, telefone, email, permissions, matricula } = req.body;
+      const { cpf, nome, telefone, email, permissions, matricula, redeSocial, diaPagamento } = req.body;
       const existente = await prisma.usuario.findFirst({
         where: { OR: [{ cpf }, { email }] },
       });
@@ -35,6 +35,8 @@ export default function AlunoController(prisma: PrismaClient): Router {
       const aluno = await prisma.aluno.create({
         data: {
           matricula,
+          redeSocial: redeSocial || null,
+          diaPagamento: diaPagamento ? Number(diaPagamento) : null,
           usuario: {
             create: { cpf, nome, telefone, email, senha: senhaHash, role: "ALUNO", permissions },
           },
@@ -51,7 +53,7 @@ export default function AlunoController(prisma: PrismaClient): Router {
   router.put("/:id", authMiddleware, async (req, res) => {
     const id = req.params.id as string;
     try {
-      const { cpf, nome, telefone, email, permissions, matricula } = req.body;
+      const { cpf, nome, telefone, email, permissions, matricula, redeSocial, diaPagamento } = req.body;
       const aluno = await prisma.aluno.findUnique({
         where: { id },
         include: { usuario: true },
@@ -71,6 +73,8 @@ export default function AlunoController(prisma: PrismaClient): Router {
         where: { id },
         data: {
           matricula,
+          redeSocial: redeSocial || null,
+          diaPagamento: diaPagamento ? Number(diaPagamento) : null,
           usuario: {
             update: { cpf, nome, telefone, email, permissions, role: "ALUNO" },
           },

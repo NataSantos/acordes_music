@@ -31,7 +31,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp, Eye, EyeOff } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, AlertCircle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp, Eye, EyeOff, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -42,7 +42,7 @@ import {
 type Sala = { id: string; nome: string; capacidade: number; descricao?: string | null };
 type Usuario = { id: string; cpf: string; nome: string; telefone: string; email: string };
 type Professor = { id: string; usuario: Usuario; profissao?: string | null };
-type Aluno = { id: string; usuario: Usuario; matricula?: string | null };
+type Aluno = { id: string; usuario: Usuario; matricula?: string | null; redeSocial?: string | null; diaPagamento?: number | null };
 type Agendamento = {
   id: string;
   professorId: string;
@@ -74,6 +74,25 @@ type GanhosResumo = {
 type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number; professorShare: number; porcentagem: number; alunoMeses: number };
 type GanhosMes = { mes: string; aulas: number; valor: number; professorShare: number };
 
+type PagamentoInfo = {
+  id: string;
+  valor?: number | null;
+  tipoPagamento?: string | null;
+  pagoEm: string;
+  comprovanteUrl?: string | null;
+};
+
+type PagamentoAluno = {
+  id: string;
+  usuario: Usuario;
+  matricula?: string | null;
+  redeSocial?: string | null;
+  diaPagamento: number;
+  pago: boolean;
+  status: "pago" | "atrasado" | "em_aberto";
+  pagamento: PagamentoInfo | null;
+};
+
 type GanhosData = {
   resumo: GanhosResumo;
   porProfessor: GanhosProfessor[];
@@ -81,7 +100,7 @@ type GanhosData = {
   aulas: Agendamento[];
 };
 
-type Section = "salas" | "professores" | "alunos" | "agendamentos" | "financeiro";
+type Section = "salas" | "professores" | "alunos" | "agendamentos" | "financeiro" | "pagamento";
 
 const backendUrl = import.meta.env.VITE_API_URL ?? `http://${location.hostname}:3000`;
 
@@ -127,12 +146,13 @@ const tabs: { value: Section; label: string; icon: React.ComponentType<{ classNa
   { value: "alunos", label: "Alunos", icon: BookUser },
   { value: "agendamentos", label: "Agendamentos", icon: CalendarDays },
   { value: "financeiro", label: "Financeiro", icon: Wallet },
+  { value: "pagamento", label: "Pagamento", icon: DollarSign },
 ];
 
 function App() {
   const [section, setSection] = useState<Section>(() => {
     const hash = location.hash.replace("#", "") as Section;
-    return ["salas", "professores", "alunos", "agendamentos", "financeiro"].includes(hash) ? hash : "agendamentos";
+    return ["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"].includes(hash) ? hash : "agendamentos";
   });
   const [salas, setSalas] = useState<Sala[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
@@ -196,6 +216,20 @@ function App() {
   });
   const [filtroDataFim, setFiltroDataFim] = useState(() => new Date().toISOString().slice(0, 10));
   const [ganhosLoading, setGanhosLoading] = useState(false);
+  const [pagamentos, setPagamentos] = useState<PagamentoAluno[]>([]);
+  const [pagamentosLoading, setPagamentosLoading] = useState(false);
+  const [pagamentoMes, setPagamentoMes] = useState(() => new Date().getMonth() + 1);
+  const [pagamentoAno, setPagamentoAno] = useState(() => new Date().getFullYear());
+  const [pagamentoDialogOpen, setPagamentoDialogOpen] = useState(false);
+  const [pagandoAluno, setPagandoAluno] = useState<PagamentoAluno | null>(null);
+  const [pagamentoForm, setPagamentoForm] = useState({ valor: "", tipoPagamento: "PIX" });
+  const [comprovanteFile, setComprovanteFile] = useState<File | null>(null);
+  const [comprovantePreview, setComprovantePreview] = useState<string | null>(null);
+  const [pagamentoError, setPagamentoError] = useState("");
+  const [comprovanteViewOpen, setComprovanteViewOpen] = useState(false);
+  const [comprovanteViewAluno, setComprovanteViewAluno] = useState<PagamentoAluno | null>(null);
+  const [comprovanteFullOpen, setComprovanteFullOpen] = useState(false);
+  const [comprovanteFullId, setComprovanteFullId] = useState<string | null>(null);
 
   useEffect(() => {
     if (section !== "financeiro" || !user) return;
@@ -217,6 +251,24 @@ function App() {
   }, [section, filtroDataInicio, filtroDataFim, user]);
 
   useEffect(() => {
+    if (section !== "pagamento" || !user) return;
+    (async () => {
+      setPagamentosLoading(true);
+      try {
+        const res = await apiFetch(`${backendUrl}/api/pagamentos?mes=${pagamentoMes}&ano=${pagamentoAno}`);
+        if (res.ok) {
+          const json = await res.json();
+          setPagamentos(json.alunos);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar pagamentos:", err);
+      } finally {
+        setPagamentosLoading(false);
+      }
+    })();
+  }, [section, user, pagamentoMes, pagamentoAno]);
+
+  useEffect(() => {
     if (error) setErrorDialogOpen(true);
   }, [error]);
 
@@ -236,7 +288,7 @@ function App() {
   useEffect(() => {
     const onHashChange = () => {
       const hash = location.hash.replace("#", "") as Section;
-      if (["salas", "professores", "alunos", "agendamentos", "financeiro"].includes(hash)) {
+      if (["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"].includes(hash)) {
         setSection(hash);
       }
     };
@@ -476,7 +528,7 @@ function App() {
     setAulaExperimental(false);
     setForm({
       nome: "", descricao: "", capacidade: "",
-      cpf: "", email: "", telefone: "", profissao: "", matricula: "",
+    cpf: "", email: "", telefone: "", profissao: "", matricula: "", redeSocial: "", diaPagamento: "",
       professorId: "", alunoId: "", salaId: "",
     data: "", horario: "", duracao: "60", valor: "", observacao: "",
     });
@@ -504,7 +556,7 @@ function App() {
       setSection("professores");
     } else if ("matricula" in item) {
       const a = item as Aluno;
-      setForm(p => ({ ...p, nome: a.usuario.nome, cpf: a.usuario.cpf, email: a.usuario.email, telefone: a.usuario.telefone, matricula: a.matricula ?? "" }));
+      setForm(p => ({ ...p, nome: a.usuario.nome, cpf: a.usuario.cpf, email: a.usuario.email, telefone: a.usuario.telefone, matricula: a.matricula ?? "", redeSocial: a.redeSocial ?? "", diaPagamento: a.diaPagamento ? String(a.diaPagamento) : "" }));
       setSection("alunos");
     } else {
       const a = item as Agendamento;
@@ -642,7 +694,7 @@ function App() {
       } else if (section === "professores") {
         payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, profissao: form.profissao || null };
       } else if (section === "alunos") {
-        payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, matricula: form.matricula || null };
+        payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, matricula: form.matricula || null, redeSocial: form.redeSocial || null, diaPagamento: form.diaPagamento || null };
       } else {
         endpoint = "agendamentos";
         payload = {
@@ -1117,17 +1169,19 @@ function App() {
               </div>
             ) : (
               <div className="divide-y divide-border/40">
-                <div className="grid grid-cols-[1fr_90px_90px] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
+                <div className="grid grid-cols-[1fr_70px_90px_90px] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
                   <span>Professor</span>
+                  <span className="text-right">Alunos</span>
                   <span className="text-right">Valor Bruto</span>
                   <span className="text-right">Ganho (70%)</span>
                 </div>
                 {ganhos.porProfessor.map(p => (
-                  <div key={p.id} className="px-4 py-3 grid grid-cols-[1fr_90px_90px] gap-3 items-center hover:bg-muted/20 transition-colors">
+                  <div key={p.id} className="px-4 py-3 grid grid-cols-[1fr_70px_90px_90px] gap-3 items-center hover:bg-muted/20 transition-colors">
                     <div className="min-w-0">
                       <span className="text-sm font-medium truncate block">{p.nome}</span>
                       <span className="text-[10px] text-muted-foreground/50">{p.alunoMeses} aluno{String(p.alunoMeses) !== "1" ? "s" : ""}-mês · {p.aulas} aula{String(p.aulas) !== "1" ? "s" : ""}</span>
                     </div>
+                    <span className="font-mono text-sm tabular-nums text-center text-muted-foreground">{p.alunos}</span>
                     <span className="font-mono text-sm text-right text-muted-foreground">{fmtValor(p.valor)}</span>
                     <span className="font-mono text-sm font-semibold tabular-nums text-right">{fmtValor(p.professorShare)}</span>
                   </div>
@@ -1170,6 +1224,208 @@ function App() {
           </Card>
         )}
 
+      </div>
+    );
+  };
+
+  const confirmarPagamento = async () => {
+    if (!pagandoAluno) return;
+    setPagamentoError("");
+    try {
+      const formData = new FormData();
+      formData.append("alunoId", pagandoAluno.id);
+      formData.append("mes", String(pagamentoMes));
+      formData.append("ano", String(pagamentoAno));
+      formData.append("valor", pagamentoForm.valor || "0");
+      formData.append("tipoPagamento", pagamentoForm.tipoPagamento);
+      if (comprovanteFile) formData.append("comprovante", comprovanteFile);
+
+      const res = await apiFetch(`${backendUrl}/api/pagamentos/pagar`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPagamentos(prev => prev.map(p =>
+          p.id === pagandoAluno.id ? {
+            ...p,
+            pago: true,
+            status: "pago" as const,
+            pagamento: {
+              id: data.id,
+              valor: data.valor,
+              tipoPagamento: data.tipoPagamento,
+              pagoEm: data.pagoEm,
+              comprovanteUrl: data.comprovanteUrl,
+            },
+          } : p
+        ));
+        setPagamentoDialogOpen(false);
+        setPagandoAluno(null);
+        setComprovanteFile(null);
+        if (comprovantePreview) { URL.revokeObjectURL(comprovantePreview); setComprovantePreview(null); }
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setPagamentoError(errData?.error || `Erro ${res.status}: ${res.statusText}`);
+      }
+    } catch (err) {
+      setPagamentoError(err instanceof Error ? err.message : "Erro inesperado");
+    }
+  };
+
+  const renderPagamento = () => {
+    if (pagamentosLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <span className="size-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin mb-4" />
+          <p>Carregando dados de pagamento...</p>
+        </div>
+      );
+    }
+
+    const navegarMes = (direcao: number) => {
+      let mes = pagamentoMes + direcao;
+      let ano = pagamentoAno;
+      if (mes < 1) { mes = 12; ano--; }
+      if (mes > 12) { mes = 1; ano++; }
+      setPagamentoMes(mes);
+      setPagamentoAno(ano);
+    };
+
+    const abrirDialogPagamento = (a: PagamentoAluno) => {
+      setPagandoAluno(a);
+      setPagamentoForm({ valor: "240", tipoPagamento: "PIX" });
+      setComprovanteFile(null);
+      if (comprovantePreview) { URL.revokeObjectURL(comprovantePreview); setComprovantePreview(null); }
+      setPagamentoError("");
+      setPagamentoDialogOpen(true);
+    };
+
+    const mesRef = String(pagamentoMes).padStart(2, "0");
+    const anoRef = pagamentoAno;
+
+    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const nomeMes = meses[pagamentoMes - 1];
+
+    const grupos = [
+      { dia: 5, label: "Dia 5" },
+      { dia: 10, label: "Dia 10" },
+      { dia: 15, label: "Dia 15" },
+    ];
+
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight">Pagamentos</h1>
+            <p className="text-sm text-muted-foreground mt-1">
+              Acompanhe os pagamentos dos alunos
+            </p>
+          </div>
+        </div>
+
+        <Card className="border-border/60 shadow-sm">
+          <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMes(-1)}>
+                <span className="text-lg leading-none">‹</span>
+                <span className="text-sm">Anterior</span>
+              </Button>
+              <div className="text-center">
+                <span className="text-base font-semibold">{nomeMes} {anoRef}</span>
+                <span className="text-xs text-muted-foreground/50 block">Mês de referência</span>
+              </div>
+              <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMes(1)}>
+                <span className="text-sm">Próximo</span>
+                <span className="text-lg leading-none">›</span>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {grupos.map(grupo => {
+          const alunosGrupo = pagamentos.filter(a => a.diaPagamento === grupo.dia);
+          if (alunosGrupo.length === 0) return null;
+
+          return (
+            <Card key={grupo.dia} className="shadow-sm border-border/60 overflow-hidden">
+              <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                  <DollarSign className="size-4" />
+                  <span className="font-semibold uppercase tracking-wider">Vencimento Dia {grupo.dia}</span>
+                  <span className="text-xs font-normal text-muted-foreground/50 ml-auto">{alunosGrupo.length} aluno{alunosGrupo.length !== 1 ? "s" : ""}</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="border-border/40">
+                      <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10">Aluno</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 text-center">Vencimento</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 text-center">Status</TableHead>
+                      <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 text-center w-28">Ação</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {alunosGrupo.map(a => (
+                      <TableRow key={a.id} className="border-border/40 hover:bg-muted/20">
+                        <TableCell className="py-3">
+                          <span className="text-sm font-medium">{a.usuario.nome}</span>
+                          {a.redeSocial && (
+                            <span className="text-[10px] text-muted-foreground/50 block">{a.redeSocial}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-center">
+                          <span className="text-sm font-mono tabular-nums">{String(a.diaPagamento).padStart(2, "0")}/{mesRef}/{anoRef}</span>
+                        </TableCell>
+                        <TableCell className="py-3 text-center">
+                          {a.status === "pago" ? (
+                            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex">
+                              <CheckCircle2 className="size-3" />
+                              Pago
+                            </Badge>
+                          ) : (
+                            <Badge className={`gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex ${
+                              a.status === "atrasado"
+                                ? "bg-red-100 text-red-700 border-red-200"
+                                : "bg-amber-100 text-amber-700 border-amber-200"
+                            }`}>
+                              <Clock className="size-3" />
+                              {a.status === "atrasado" ? "Atrasado" : "Em Aberto"}
+                            </Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="py-3 text-center">
+                          {a.status === "pago" ? (
+                            <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteViewAluno(a); setComprovanteViewOpen(true); }}>
+                              <FileText className="size-3.5" />
+                              Ver
+                            </Button>
+                          ) : (
+                            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" onClick={() => abrirDialogPagamento(a)}>
+                              <DollarSign className="size-3.5" />
+                              Pagar
+                            </Button>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          );
+        })}
+
+        {pagamentos.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+            <DollarSign className="size-12 mb-4 text-muted-foreground/30" />
+            <p>Nenhum aluno com dia de pagamento definido</p>
+            <p className="text-xs text-muted-foreground/50 mt-1">Cadastre alunos e defina o dia de pagamento</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -1313,10 +1569,29 @@ function App() {
           </div>
         )}
         {section === "alunos" && (
-          <div className="space-y-2">
-            <Label>Matrícula</Label>
-            <Input value={form.matricula} onChange={e => handleFormField("matricula", e.target.value)} />
-          </div>
+          <>
+            <div className="space-y-2">
+              <Label>Matrícula</Label>
+              <Input value={form.matricula} onChange={e => handleFormField("matricula", e.target.value)} />
+            </div>
+            <div className="space-y-2">
+              <Label>Rede Social</Label>
+              <Input value={form.redeSocial} onChange={e => handleFormField("redeSocial", e.target.value)} placeholder="Instagram, Facebook, etc." />
+            </div>
+            <div className="space-y-2">
+              <Label>Dia de Pagamento</Label>
+              <Select value={form.diaPagamento} onValueChange={v => handleFormField("diaPagamento", v)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o dia" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">Dia 5</SelectItem>
+                  <SelectItem value="10">Dia 10</SelectItem>
+                  <SelectItem value="15">Dia 15</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </>
         )}
       </div>
     );
@@ -1742,7 +2017,8 @@ function App() {
       <div className="flex-1 flex flex-col overflow-hidden bg-gradient-to-br from-background via-background to-muted/20">
         <main className="flex-1 overflow-auto p-6">
             <div className="max-w-7xl mx-auto space-y-6">
-              {section === "financeiro" ? renderFinanceiro() : (
+              {section === "financeiro" ? renderFinanceiro() :
+               section === "pagamento" ? renderPagamento() : (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -2034,6 +2310,177 @@ function App() {
             <Button onClick={handleSubmit} disabled={section === "agendamentos" && conflitos.length > 0}>
               {editingId ? "Atualizar" : "Salvar"}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pagamentoDialogOpen} onOpenChange={v => { setPagamentoDialogOpen(v); if (!v) { setPagandoAluno(null); setComprovanteFile(null); if (comprovantePreview) { URL.revokeObjectURL(comprovantePreview); setComprovantePreview(null); } } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <DollarSign className="size-4.5 text-emerald-600" />
+              </div>
+              <div>
+                <DialogTitle>Registrar Pagamento</DialogTitle>
+                <DialogDescription>
+                  {pagandoAluno ? pagandoAluno.usuario.nome : ""}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Valor (R$)</Label>
+              <Input type="number" step="0.01" min="0" value={pagamentoForm.valor} onChange={e => setPagamentoForm(p => ({ ...p, valor: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo de Pagamento</Label>
+              <Select value={pagamentoForm.tipoPagamento} onValueChange={v => setPagamentoForm(p => ({ ...p, tipoPagamento: v }))}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                  <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                  <SelectItem value="Boleto">Boleto</SelectItem>
+                  <SelectItem value="Transferência">Transferência</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Comprovante</Label>
+              {!comprovanteFile ? (
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-lg p-5 cursor-pointer hover:border-primary/40 hover:bg-muted/20 transition-all">
+                  <div className="size-10 rounded-full bg-muted/30 flex items-center justify-center mb-2">
+                    <FileText className="size-5 text-muted-foreground/50" />
+                  </div>
+                  <span className="text-sm text-muted-foreground font-medium">Clique para selecionar</span>
+                  <span className="text-[10px] text-muted-foreground/40 mt-0.5">Imagem do comprovante de pagamento</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={e => {
+                    const file = e.target.files?.[0] ?? null;
+                    setComprovanteFile(file);
+                    if (file) setComprovantePreview(URL.createObjectURL(file));
+                  }} />
+                </label>
+              ) : (
+                <div className="border border-border/60 rounded-lg overflow-hidden">
+                  <div className="relative">
+                    <img src={comprovantePreview ?? ""} alt="Comprovante" className="w-full object-contain max-h-40" />
+                    <Button size="icon" variant="ghost" className="absolute top-1 right-1 size-7 rounded-full bg-background/80 hover:bg-background text-muted-foreground hover:text-destructive" onClick={() => {
+                      if (comprovantePreview) URL.revokeObjectURL(comprovantePreview);
+                      setComprovantePreview(null);
+                      setComprovanteFile(null);
+                    }}>
+                      <Trash2 className="size-3.5" />
+                    </Button>
+                  </div>
+                  <div className="px-3 py-1.5 bg-muted/20 border-t border-border/40 flex items-center gap-2">
+                    <FileText className="size-3 text-muted-foreground/50" />
+                    <span className="text-xs text-muted-foreground/70 truncate flex-1">{comprovanteFile.name}</span>
+                    <span className="text-[10px] text-muted-foreground/40">{(comprovanteFile.size / 1024).toFixed(0)} KB</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          {pagamentoError && (
+            <div className="px-6">
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2.5">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{pagamentoError}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPagamentoDialogOpen(false); setPagandoAluno(null); setComprovanteFile(null); if (comprovantePreview) { URL.revokeObjectURL(comprovantePreview); setComprovantePreview(null); } setPagamentoError(""); }}>Cancelar</Button>
+            <Button onClick={confirmarPagamento} className="bg-emerald-600 hover:bg-emerald-700 shadow-xs gap-1.5">
+              <CheckCircle2 className="size-4" />
+              Confirmar Pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={comprovanteViewOpen} onOpenChange={v => { setComprovanteViewOpen(v); if (!v) setComprovanteViewAluno(null); }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-emerald-100 flex items-center justify-center">
+                <DollarSign className="size-4.5 text-emerald-600" />
+              </div>
+              <div>
+                <DialogTitle>Detalhes do Pagamento</DialogTitle>
+                <DialogDescription>
+                  {comprovanteViewAluno ? comprovanteViewAluno.usuario.nome : ""}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          {comprovanteViewAluno?.pagamento && (
+            <div className="space-y-4 py-2">
+              <div className="space-y-1.5">
+                <Label>Valor (R$)</Label>
+                <div className="flex h-10 w-full items-center rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium">
+                  R$ {Number(comprovanteViewAluno.pagamento.valor).toFixed(2)}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Tipo de Pagamento</Label>
+                <div className="flex h-10 w-full items-center rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium">
+                  {comprovanteViewAluno.pagamento.tipoPagamento}
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label>Data do Pagamento</Label>
+                <div className="flex h-10 w-full items-center rounded-lg border border-border/60 bg-muted/20 px-3 text-sm font-medium">
+                  {new Date(comprovanteViewAluno.pagamento.pagoEm).toLocaleDateString("pt-BR")}
+                </div>
+              </div>
+              {comprovanteViewAluno.pagamento.comprovanteUrl && (
+                <div className="space-y-1.5">
+                  <div className="flex items-center justify-between">
+                    <Label>Comprovante</Label>
+                    <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteFullId(comprovanteViewAluno.pagamento!.id); setComprovanteFullOpen(true); }}>
+                      <FileText className="size-3" />
+                      Ampliar
+                    </Button>
+                  </div>
+                  <div className="border border-border/40 rounded-lg overflow-hidden bg-muted/10">
+                    <img
+                      src={`${backendUrl}/api/pagamentos/comprovante/${comprovanteViewAluno.pagamento.id}`}
+                      alt="Comprovante"
+                      className="w-full object-contain max-h-32"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setComprovanteViewOpen(false); setComprovanteViewAluno(null); }}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={comprovanteFullOpen} onOpenChange={v => { setComprovanteFullOpen(v); if (!v) setComprovanteFullId(null); }}>
+        <DialogContent className="sm:max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Comprovante</DialogTitle>
+          </DialogHeader>
+          {comprovanteFullId && (
+            <div className="border border-border/40 rounded-lg overflow-hidden bg-muted/10">
+              <img
+                src={`${backendUrl}/api/pagamentos/comprovante/${comprovanteFullId}`}
+                alt="Comprovante"
+                className="w-full object-contain max-h-[80vh]"
+              />
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setComprovanteFullOpen(false); setComprovanteFullId(null); }}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

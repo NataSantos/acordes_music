@@ -47,6 +47,7 @@ export default function GanhosController(prisma: PrismaClient): Router {
       const alunoMesPorProfessor = new Map<string, Set<string>>();
       const alunoMesPorMes = new Map<string, Set<string>>();
       const aulasPorMes = new Map<string, number>();
+      const alunosPorProfessor = new Map<string, Set<string>>();
 
       for (const a of agendamentos) {
         if ((a.valor ?? VALOR_MENSAL) === 0) continue;
@@ -66,6 +67,9 @@ export default function GanhosController(prisma: PrismaClient): Router {
 
         if (!alunoMesPorMes.has(mes)) alunoMesPorMes.set(mes, new Set());
         alunoMesPorMes.get(mes)!.add(chave);
+
+        if (!alunosPorProfessor.has(a.professorId)) alunosPorProfessor.set(a.professorId, new Set());
+        alunosPorProfessor.get(a.professorId)!.add(a.alunoId);
       }
 
       let totalAlunoMes = 0;
@@ -82,6 +86,7 @@ export default function GanhosController(prisma: PrismaClient): Router {
         const valor = alunoMeses * VALOR_MENSAL;
         const porcentagem = totalBruto > 0 ? Math.round((valor / totalBruto) * 10000) / 100 : 0;
         const professorShare = Math.round(valor * (1 - TAXA_ESCOLA) * 100) / 100;
+        const alunos = alunosPorProfessor.get(id)?.size ?? 0;
 
         return {
           id,
@@ -90,6 +95,7 @@ export default function GanhosController(prisma: PrismaClient): Router {
           horas,
           valor: Math.round(valor * 100) / 100,
           alunoMeses,
+          alunos,
           porcentagem,
           professorShare,
         };

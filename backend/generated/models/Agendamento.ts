@@ -655,14 +655,6 @@ export type EnumAgendamentoStatusFieldUpdateOperationsInput = {
   set?: $Enums.AgendamentoStatus
 }
 
-export type NullableFloatFieldUpdateOperationsInput = {
-  set?: number | null
-  increment?: number
-  decrement?: number
-  multiply?: number
-  divide?: number
-}
-
 export type AgendamentoCreateWithoutSalaInput = {
   id?: string
   data: Date | string

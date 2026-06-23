@@ -20,8 +20,18 @@ export type AlunoModel = runtime.Types.Result.DefaultSelection<Prisma.$AlunoPayl
 
 export type AggregateAluno = {
   _count: AlunoCountAggregateOutputType | null
+  _avg: AlunoAvgAggregateOutputType | null
+  _sum: AlunoSumAggregateOutputType | null
   _min: AlunoMinAggregateOutputType | null
   _max: AlunoMaxAggregateOutputType | null
+}
+
+export type AlunoAvgAggregateOutputType = {
+  diaPagamento: number | null
+}
+
+export type AlunoSumAggregateOutputType = {
+  diaPagamento: number | null
 }
 
 export type AlunoMinAggregateOutputType = {
@@ -29,6 +39,8 @@ export type AlunoMinAggregateOutputType = {
   usuarioId: string | null
   createdAt: Date | null
   matricula: string | null
+  redeSocial: string | null
+  diaPagamento: number | null
 }
 
 export type AlunoMaxAggregateOutputType = {
@@ -36,6 +48,8 @@ export type AlunoMaxAggregateOutputType = {
   usuarioId: string | null
   createdAt: Date | null
   matricula: string | null
+  redeSocial: string | null
+  diaPagamento: number | null
 }
 
 export type AlunoCountAggregateOutputType = {
@@ -43,15 +57,27 @@ export type AlunoCountAggregateOutputType = {
   usuarioId: number
   createdAt: number
   matricula: number
+  redeSocial: number
+  diaPagamento: number
   _all: number
 }
 
+
+export type AlunoAvgAggregateInputType = {
+  diaPagamento?: true
+}
+
+export type AlunoSumAggregateInputType = {
+  diaPagamento?: true
+}
 
 export type AlunoMinAggregateInputType = {
   id?: true
   usuarioId?: true
   createdAt?: true
   matricula?: true
+  redeSocial?: true
+  diaPagamento?: true
 }
 
 export type AlunoMaxAggregateInputType = {
@@ -59,6 +85,8 @@ export type AlunoMaxAggregateInputType = {
   usuarioId?: true
   createdAt?: true
   matricula?: true
+  redeSocial?: true
+  diaPagamento?: true
 }
 
 export type AlunoCountAggregateInputType = {
@@ -66,6 +94,8 @@ export type AlunoCountAggregateInputType = {
   usuarioId?: true
   createdAt?: true
   matricula?: true
+  redeSocial?: true
+  diaPagamento?: true
   _all?: true
 }
 
@@ -107,6 +137,18 @@ export type AlunoAggregateArgs<ExtArgs extends runtime.Types.Extensions.Internal
   /**
    * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
    * 
+   * Select which fields to average
+  **/
+  _avg?: AlunoAvgAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
+   * Select which fields to sum
+  **/
+  _sum?: AlunoSumAggregateInputType
+  /**
+   * {@link https://www.prisma.io/docs/concepts/components/prisma-client/aggregations Aggregation Docs}
+   * 
    * Select which fields to find the minimum value
   **/
   _min?: AlunoMinAggregateInputType
@@ -137,6 +179,8 @@ export type AlunoGroupByArgs<ExtArgs extends runtime.Types.Extensions.InternalAr
   take?: number
   skip?: number
   _count?: AlunoCountAggregateInputType | true
+  _avg?: AlunoAvgAggregateInputType
+  _sum?: AlunoSumAggregateInputType
   _min?: AlunoMinAggregateInputType
   _max?: AlunoMaxAggregateInputType
 }
@@ -146,7 +190,11 @@ export type AlunoGroupByOutputType = {
   usuarioId: string
   createdAt: Date
   matricula: string | null
+  redeSocial: string | null
+  diaPagamento: number | null
   _count: AlunoCountAggregateOutputType | null
+  _avg: AlunoAvgAggregateOutputType | null
+  _sum: AlunoSumAggregateOutputType | null
   _min: AlunoMinAggregateOutputType | null
   _max: AlunoMaxAggregateOutputType | null
 }
@@ -174,8 +222,11 @@ export type AlunoWhereInput = {
   usuarioId?: Prisma.StringFilter<"Aluno"> | string
   createdAt?: Prisma.DateTimeFilter<"Aluno"> | Date | string
   matricula?: Prisma.StringNullableFilter<"Aluno"> | string | null
+  redeSocial?: Prisma.StringNullableFilter<"Aluno"> | string | null
+  diaPagamento?: Prisma.IntNullableFilter<"Aluno"> | number | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
   agendamentos?: Prisma.AgendamentoListRelationFilter
+  pagamentos?: Prisma.PagamentoListRelationFilter
 }
 
 export type AlunoOrderByWithRelationInput = {
@@ -183,8 +234,11 @@ export type AlunoOrderByWithRelationInput = {
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   matricula?: Prisma.SortOrderInput | Prisma.SortOrder
+  redeSocial?: Prisma.SortOrderInput | Prisma.SortOrder
+  diaPagamento?: Prisma.SortOrderInput | Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
   agendamentos?: Prisma.AgendamentoOrderByRelationAggregateInput
+  pagamentos?: Prisma.PagamentoOrderByRelationAggregateInput
 }
 
 export type AlunoWhereUniqueInput = Prisma.AtLeast<{
@@ -195,8 +249,11 @@ export type AlunoWhereUniqueInput = Prisma.AtLeast<{
   NOT?: Prisma.AlunoWhereInput | Prisma.AlunoWhereInput[]
   createdAt?: Prisma.DateTimeFilter<"Aluno"> | Date | string
   matricula?: Prisma.StringNullableFilter<"Aluno"> | string | null
+  redeSocial?: Prisma.StringNullableFilter<"Aluno"> | string | null
+  diaPagamento?: Prisma.IntNullableFilter<"Aluno"> | number | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
   agendamentos?: Prisma.AgendamentoListRelationFilter
+  pagamentos?: Prisma.PagamentoListRelationFilter
 }, "id" | "usuarioId">
 
 export type AlunoOrderByWithAggregationInput = {
@@ -204,9 +261,13 @@ export type AlunoOrderByWithAggregationInput = {
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   matricula?: Prisma.SortOrderInput | Prisma.SortOrder
+  redeSocial?: Prisma.SortOrderInput | Prisma.SortOrder
+  diaPagamento?: Prisma.SortOrderInput | Prisma.SortOrder
   _count?: Prisma.AlunoCountOrderByAggregateInput
+  _avg?: Prisma.AlunoAvgOrderByAggregateInput
   _max?: Prisma.AlunoMaxOrderByAggregateInput
   _min?: Prisma.AlunoMinOrderByAggregateInput
+  _sum?: Prisma.AlunoSumOrderByAggregateInput
 }
 
 export type AlunoScalarWhereWithAggregatesInput = {
@@ -217,14 +278,19 @@ export type AlunoScalarWhereWithAggregatesInput = {
   usuarioId?: Prisma.StringWithAggregatesFilter<"Aluno"> | string
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"Aluno"> | Date | string
   matricula?: Prisma.StringNullableWithAggregatesFilter<"Aluno"> | string | null
+  redeSocial?: Prisma.StringNullableWithAggregatesFilter<"Aluno"> | string | null
+  diaPagamento?: Prisma.IntNullableWithAggregatesFilter<"Aluno"> | number | null
 }
 
 export type AlunoCreateInput = {
   id?: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutAlunoInput
   agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutAlunoInput
+  pagamentos?: Prisma.PagamentoCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUncheckedCreateInput = {
@@ -232,15 +298,21 @@ export type AlunoUncheckedCreateInput = {
   usuarioId: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
   agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutAlunoInput
+  pagamentos?: Prisma.PagamentoUncheckedCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUpdateInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAlunoNestedInput
   agendamentos?: Prisma.AgendamentoUpdateManyWithoutAlunoNestedInput
+  pagamentos?: Prisma.PagamentoUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoUncheckedUpdateInput = {
@@ -248,7 +320,10 @@ export type AlunoUncheckedUpdateInput = {
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutAlunoNestedInput
+  pagamentos?: Prisma.PagamentoUncheckedUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoCreateManyInput = {
@@ -256,12 +331,16 @@ export type AlunoCreateManyInput = {
   usuarioId: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
 }
 
 export type AlunoUpdateManyMutationInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 export type AlunoUncheckedUpdateManyInput = {
@@ -269,6 +348,8 @@ export type AlunoUncheckedUpdateManyInput = {
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
 }
 
 export type AlunoNullableScalarRelationFilter = {
@@ -281,6 +362,12 @@ export type AlunoCountOrderByAggregateInput = {
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   matricula?: Prisma.SortOrder
+  redeSocial?: Prisma.SortOrder
+  diaPagamento?: Prisma.SortOrder
+}
+
+export type AlunoAvgOrderByAggregateInput = {
+  diaPagamento?: Prisma.SortOrder
 }
 
 export type AlunoMaxOrderByAggregateInput = {
@@ -288,6 +375,8 @@ export type AlunoMaxOrderByAggregateInput = {
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   matricula?: Prisma.SortOrder
+  redeSocial?: Prisma.SortOrder
+  diaPagamento?: Prisma.SortOrder
 }
 
 export type AlunoMinOrderByAggregateInput = {
@@ -295,6 +384,12 @@ export type AlunoMinOrderByAggregateInput = {
   usuarioId?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   matricula?: Prisma.SortOrder
+  redeSocial?: Prisma.SortOrder
+  diaPagamento?: Prisma.SortOrder
+}
+
+export type AlunoSumOrderByAggregateInput = {
+  diaPagamento?: Prisma.SortOrder
 }
 
 export type AlunoScalarRelationFilter = {
@@ -334,6 +429,28 @@ export type AlunoUncheckedUpdateOneWithoutUsuarioNestedInput = {
   update?: Prisma.XOR<Prisma.XOR<Prisma.AlunoUpdateToOneWithWhereWithoutUsuarioInput, Prisma.AlunoUpdateWithoutUsuarioInput>, Prisma.AlunoUncheckedUpdateWithoutUsuarioInput>
 }
 
+export type NullableIntFieldUpdateOperationsInput = {
+  set?: number | null
+  increment?: number
+  decrement?: number
+  multiply?: number
+  divide?: number
+}
+
+export type AlunoCreateNestedOneWithoutPagamentosInput = {
+  create?: Prisma.XOR<Prisma.AlunoCreateWithoutPagamentosInput, Prisma.AlunoUncheckedCreateWithoutPagamentosInput>
+  connectOrCreate?: Prisma.AlunoCreateOrConnectWithoutPagamentosInput
+  connect?: Prisma.AlunoWhereUniqueInput
+}
+
+export type AlunoUpdateOneRequiredWithoutPagamentosNestedInput = {
+  create?: Prisma.XOR<Prisma.AlunoCreateWithoutPagamentosInput, Prisma.AlunoUncheckedCreateWithoutPagamentosInput>
+  connectOrCreate?: Prisma.AlunoCreateOrConnectWithoutPagamentosInput
+  upsert?: Prisma.AlunoUpsertWithoutPagamentosInput
+  connect?: Prisma.AlunoWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.AlunoUpdateToOneWithWhereWithoutPagamentosInput, Prisma.AlunoUpdateWithoutPagamentosInput>, Prisma.AlunoUncheckedUpdateWithoutPagamentosInput>
+}
+
 export type AlunoCreateNestedOneWithoutAgendamentosInput = {
   create?: Prisma.XOR<Prisma.AlunoCreateWithoutAgendamentosInput, Prisma.AlunoUncheckedCreateWithoutAgendamentosInput>
   connectOrCreate?: Prisma.AlunoCreateOrConnectWithoutAgendamentosInput
@@ -352,14 +469,20 @@ export type AlunoCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
   agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutAlunoInput
+  pagamentos?: Prisma.PagamentoCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUncheckedCreateWithoutUsuarioInput = {
   id?: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
   agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutAlunoInput
+  pagamentos?: Prisma.PagamentoUncheckedCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoCreateOrConnectWithoutUsuarioInput = {
@@ -382,13 +505,75 @@ export type AlunoUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   agendamentos?: Prisma.AgendamentoUpdateManyWithoutAlunoNestedInput
+  pagamentos?: Prisma.PagamentoUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoUncheckedUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutAlunoNestedInput
+  pagamentos?: Prisma.PagamentoUncheckedUpdateManyWithoutAlunoNestedInput
+}
+
+export type AlunoCreateWithoutPagamentosInput = {
+  id?: string
+  createdAt?: Date | string
+  matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
+  usuario: Prisma.UsuarioCreateNestedOneWithoutAlunoInput
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutAlunoInput
+}
+
+export type AlunoUncheckedCreateWithoutPagamentosInput = {
+  id?: string
+  usuarioId: string
+  createdAt?: Date | string
+  matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutAlunoInput
+}
+
+export type AlunoCreateOrConnectWithoutPagamentosInput = {
+  where: Prisma.AlunoWhereUniqueInput
+  create: Prisma.XOR<Prisma.AlunoCreateWithoutPagamentosInput, Prisma.AlunoUncheckedCreateWithoutPagamentosInput>
+}
+
+export type AlunoUpsertWithoutPagamentosInput = {
+  update: Prisma.XOR<Prisma.AlunoUpdateWithoutPagamentosInput, Prisma.AlunoUncheckedUpdateWithoutPagamentosInput>
+  create: Prisma.XOR<Prisma.AlunoCreateWithoutPagamentosInput, Prisma.AlunoUncheckedCreateWithoutPagamentosInput>
+  where?: Prisma.AlunoWhereInput
+}
+
+export type AlunoUpdateToOneWithWhereWithoutPagamentosInput = {
+  where?: Prisma.AlunoWhereInput
+  data: Prisma.XOR<Prisma.AlunoUpdateWithoutPagamentosInput, Prisma.AlunoUncheckedUpdateWithoutPagamentosInput>
+}
+
+export type AlunoUpdateWithoutPagamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAlunoNestedInput
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutAlunoNestedInput
+}
+
+export type AlunoUncheckedUpdateWithoutPagamentosInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutAlunoNestedInput
 }
 
@@ -396,7 +581,10 @@ export type AlunoCreateWithoutAgendamentosInput = {
   id?: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutAlunoInput
+  pagamentos?: Prisma.PagamentoCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoUncheckedCreateWithoutAgendamentosInput = {
@@ -404,6 +592,9 @@ export type AlunoUncheckedCreateWithoutAgendamentosInput = {
   usuarioId: string
   createdAt?: Date | string
   matricula?: string | null
+  redeSocial?: string | null
+  diaPagamento?: number | null
+  pagamentos?: Prisma.PagamentoUncheckedCreateNestedManyWithoutAlunoInput
 }
 
 export type AlunoCreateOrConnectWithoutAgendamentosInput = {
@@ -426,7 +617,10 @@ export type AlunoUpdateWithoutAgendamentosInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutAlunoNestedInput
+  pagamentos?: Prisma.PagamentoUpdateManyWithoutAlunoNestedInput
 }
 
 export type AlunoUncheckedUpdateWithoutAgendamentosInput = {
@@ -434,6 +628,9 @@ export type AlunoUncheckedUpdateWithoutAgendamentosInput = {
   usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   matricula?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  redeSocial?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  diaPagamento?: Prisma.NullableIntFieldUpdateOperationsInput | number | null
+  pagamentos?: Prisma.PagamentoUncheckedUpdateManyWithoutAlunoNestedInput
 }
 
 
@@ -443,10 +640,12 @@ export type AlunoUncheckedUpdateWithoutAgendamentosInput = {
 
 export type AlunoCountOutputType = {
   agendamentos: number
+  pagamentos: number
 }
 
 export type AlunoCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   agendamentos?: boolean | AlunoCountOutputTypeCountAgendamentosArgs
+  pagamentos?: boolean | AlunoCountOutputTypeCountPagamentosArgs
 }
 
 /**
@@ -466,14 +665,24 @@ export type AlunoCountOutputTypeCountAgendamentosArgs<ExtArgs extends runtime.Ty
   where?: Prisma.AgendamentoWhereInput
 }
 
+/**
+ * AlunoCountOutputType without action
+ */
+export type AlunoCountOutputTypeCountPagamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PagamentoWhereInput
+}
+
 
 export type AlunoSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
   usuarioId?: boolean
   createdAt?: boolean
   matricula?: boolean
+  redeSocial?: boolean
+  diaPagamento?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
   agendamentos?: boolean | Prisma.Aluno$agendamentosArgs<ExtArgs>
+  pagamentos?: boolean | Prisma.Aluno$pagamentosArgs<ExtArgs>
   _count?: boolean | Prisma.AlunoCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
@@ -482,6 +691,8 @@ export type AlunoSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   usuarioId?: boolean
   createdAt?: boolean
   matricula?: boolean
+  redeSocial?: boolean
+  diaPagamento?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
@@ -490,6 +701,8 @@ export type AlunoSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensi
   usuarioId?: boolean
   createdAt?: boolean
   matricula?: boolean
+  redeSocial?: boolean
+  diaPagamento?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["aluno"]>
 
@@ -498,12 +711,15 @@ export type AlunoSelectScalar = {
   usuarioId?: boolean
   createdAt?: boolean
   matricula?: boolean
+  redeSocial?: boolean
+  diaPagamento?: boolean
 }
 
-export type AlunoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt" | "matricula", ExtArgs["result"]["aluno"]>
+export type AlunoOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "usuarioId" | "createdAt" | "matricula" | "redeSocial" | "diaPagamento", ExtArgs["result"]["aluno"]>
 export type AlunoInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
   agendamentos?: boolean | Prisma.Aluno$agendamentosArgs<ExtArgs>
+  pagamentos?: boolean | Prisma.Aluno$pagamentosArgs<ExtArgs>
   _count?: boolean | Prisma.AlunoCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type AlunoIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -518,12 +734,15 @@ export type $AlunoPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs 
   objects: {
     usuario: Prisma.$UsuarioPayload<ExtArgs>
     agendamentos: Prisma.$AgendamentoPayload<ExtArgs>[]
+    pagamentos: Prisma.$PagamentoPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
     usuarioId: string
     createdAt: Date
     matricula: string | null
+    redeSocial: string | null
+    diaPagamento: number | null
   }, ExtArgs["result"]["aluno"]>
   composites: {}
 }
@@ -920,6 +1139,7 @@ export interface Prisma__AlunoClient<T, Null = never, ExtArgs extends runtime.Ty
   readonly [Symbol.toStringTag]: "PrismaPromise"
   usuario<T extends Prisma.UsuarioDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UsuarioDefaultArgs<ExtArgs>>): Prisma.Prisma__UsuarioClient<runtime.Types.Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   agendamentos<T extends Prisma.Aluno$agendamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Aluno$agendamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgendamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pagamentos<T extends Prisma.Aluno$pagamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Aluno$pagamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PagamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -953,6 +1173,8 @@ export interface AlunoFieldRefs {
   readonly usuarioId: Prisma.FieldRef<"Aluno", 'String'>
   readonly createdAt: Prisma.FieldRef<"Aluno", 'DateTime'>
   readonly matricula: Prisma.FieldRef<"Aluno", 'String'>
+  readonly redeSocial: Prisma.FieldRef<"Aluno", 'String'>
+  readonly diaPagamento: Prisma.FieldRef<"Aluno", 'Int'>
 }
     
 
@@ -1373,6 +1595,30 @@ export type Aluno$agendamentosArgs<ExtArgs extends runtime.Types.Extensions.Inte
   take?: number
   skip?: number
   distinct?: Prisma.AgendamentoScalarFieldEnum | Prisma.AgendamentoScalarFieldEnum[]
+}
+
+/**
+ * Aluno.pagamentos
+ */
+export type Aluno$pagamentosArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the Pagamento
+   */
+  select?: Prisma.PagamentoSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the Pagamento
+   */
+  omit?: Prisma.PagamentoOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PagamentoInclude<ExtArgs> | null
+  where?: Prisma.PagamentoWhereInput
+  orderBy?: Prisma.PagamentoOrderByWithRelationInput | Prisma.PagamentoOrderByWithRelationInput[]
+  cursor?: Prisma.PagamentoWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PagamentoScalarFieldEnum | Prisma.PagamentoScalarFieldEnum[]
 }
 
 /**
