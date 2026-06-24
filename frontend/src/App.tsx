@@ -152,7 +152,14 @@ const tabs: { value: Section; label: string; icon: React.ComponentType<{ classNa
 function App() {
   const [section, setSection] = useState<Section>(() => {
     const hash = location.hash.replace("#", "") as Section;
-    return ["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"].includes(hash) ? hash : "agendamentos";
+    const allowed: Section[] = ["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"];
+    if (!allowed.includes(hash)) return "agendamentos";
+    const saved = localStorage.getItem("user");
+    if (saved) {
+      const u = JSON.parse(saved);
+      if (u.role === "PROFESSOR" && (hash === "financeiro" || hash === "pagamento")) return "agendamentos";
+    }
+    return hash;
   });
   const [salas, setSalas] = useState<Sala[]>([]);
   const [professores, setProfessores] = useState<Professor[]>([]);
@@ -165,6 +172,7 @@ function App() {
   const [verificandoConflito, setVerificandoConflito] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [editMode, setEditMode] = useState<'reagendar' | 'editar' | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterSala, setFilterSala] = useState<string>("");
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -289,6 +297,7 @@ function App() {
     const onHashChange = () => {
       const hash = location.hash.replace("#", "") as Section;
       if (["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"].includes(hash)) {
+        if (user?.role === "PROFESSOR" && (hash === "financeiro" || hash === "pagamento")) return;
         setSection(hash);
       }
     };
@@ -523,6 +532,7 @@ function App() {
 
   const resetForm = () => {
     setEditingId(null);
+    setEditMode(null);
     setConflitos([]);
     setRepetirSemanas(12);
     setAulaExperimental(false);
@@ -543,7 +553,7 @@ function App() {
     setDialogOpen(true);
   };
 
-  const openEdit = (item: Sala | Professor | Aluno | Agendamento) => {
+  const openEdit = (item: Sala | Professor | Aluno | Agendamento, mode?: 'reagendar' | 'editar') => {
     resetForm();
     setEditingId(item.id);
     if ("capacidade" in item) {
@@ -572,6 +582,7 @@ function App() {
         valor: a.valor ? String(a.valor) : "",
       }));
       setSection("agendamentos");
+      if (mode) setEditMode(mode);
     }
     setDialogOpen(true);
   };
@@ -654,7 +665,12 @@ function App() {
     setError(null);
 
     if (section === "agendamentos") {
-      if (!form.professorId || !form.alunoId || !form.salaId || !form.data || !form.horario) {
+      if (editMode === 'reagendar') {
+        if (!form.data || !form.horario || !form.duracao) {
+          setError("Preencha data, horário e duração");
+          return;
+        }
+      } else if (!form.professorId || !form.alunoId || !form.salaId || !form.data || !form.horario) {
         setError("Preencha todos os campos obrigatórios");
         return;
       }
@@ -697,12 +713,24 @@ function App() {
         payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, matricula: form.matricula || null, redeSocial: form.redeSocial || null, diaPagamento: form.diaPagamento || null };
       } else {
         endpoint = "agendamentos";
-        payload = {
-          professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
-          data: form.data, horario: form.horario, duracao: Number(form.duracao) || 60,
-          valor: aulaExperimental ? 0 : (form.valor ? Number(form.valor) : null),
-          observacao: form.observacao || null,
-        };
+        if (editMode === 'reagendar') {
+          payload = {
+            data: form.data, horario: form.horario, duracao: Number(form.duracao) || 60,
+          };
+        } else if (editMode === 'editar') {
+          payload = {
+            professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
+            valor: form.valor ? Number(form.valor) : null,
+            observacao: form.observacao || null,
+          };
+        } else {
+          payload = {
+            professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
+            data: form.data, horario: form.horario, duracao: Number(form.duracao) || 60,
+            valor: aulaExperimental ? 0 : (form.valor ? Number(form.valor) : null),
+            observacao: form.observacao || null,
+          };
+        }
       }
 
       if (section === "agendamentos" && !editingId) {
@@ -965,11 +993,11 @@ function App() {
                                           </DropdownMenuTrigger>
                                           <DropdownMenuContent align="end">
                                             {a.status !== "CONCLUIDO" && (
-                                              <DropdownMenuItem onClick={() => openEdit(a)}>
+                                              <DropdownMenuItem onClick={() => openEdit(a, 'reagendar')}>
                                                 <CalendarClock className="size-3.5" /> Reagendar
                                               </DropdownMenuItem>
                                             )}
-                                            <DropdownMenuItem onClick={() => openEdit(a)}>
+                                            <DropdownMenuItem onClick={() => openEdit(a, 'editar')}>
                                               <Pencil className="size-3.5" /> Editar
                                             </DropdownMenuItem>
                                             {a.status !== "CONCLUIDO" && (
@@ -1439,7 +1467,7 @@ function App() {
             {user?.role === "PROFESSOR" ? (
               <Input value={professores.find(p => p.id === user.professorId)?.usuario?.nome || ""} disabled className="bg-muted" />
             ) : (
-              <Select value={form.professorId} onValueChange={v => handleFormField("professorId", v)}>
+              <Select value={form.professorId} onValueChange={v => handleFormField("professorId", v)} disabled={editMode === 'reagendar'}>
                 <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                 <SelectContent>
                   {professores.map(p => <SelectItem key={p.id} value={p.id}>{p.usuario.nome}</SelectItem>)}
@@ -1449,7 +1477,7 @@ function App() {
           </div>
           <div className="space-y-2">
             <Label>Aluno</Label>
-            <Select value={form.alunoId} onValueChange={v => handleFormField("alunoId", v)}>
+            <Select value={form.alunoId} onValueChange={v => handleFormField("alunoId", v)} disabled={editMode === 'reagendar'}>
               <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
               <SelectContent>
                 {alunos.map(a => <SelectItem key={a.id} value={a.id}>{a.usuario.nome}</SelectItem>)}
@@ -1458,7 +1486,7 @@ function App() {
           </div>
           <div className="space-y-2">
             <Label>Sala</Label>
-            <Select value={form.salaId} onValueChange={v => handleFormField("salaId", v)}>
+            <Select value={form.salaId} onValueChange={v => handleFormField("salaId", v)} disabled={editMode === 'reagendar'}>
               <SelectTrigger className="w-full"><SelectValue placeholder="Selecione..." /></SelectTrigger>
               <SelectContent>
                 {salas.map(s => <SelectItem key={s.id} value={s.id}>{s.nome}</SelectItem>)}
@@ -1467,23 +1495,23 @@ function App() {
           </div>
           <div className="space-y-2">
             <Label>Data</Label>
-            <Input type="date" value={form.data} onChange={e => handleFormField("data", e.target.value)} />
+            <Input type="date" value={form.data} onChange={e => handleFormField("data", e.target.value)} disabled={editMode === 'editar'} />
           </div>
           <div className="space-y-2">
             <Label>Horário</Label>
-            <Input type="time" value={form.horario} onChange={e => handleFormField("horario", e.target.value)} />
+            <Input type="time" value={form.horario} onChange={e => handleFormField("horario", e.target.value)} disabled={editMode === 'editar'} />
           </div>
           <div className="space-y-2">
             <Label>Duração (min)</Label>
-            <Input type="number" min={1} value={form.duracao} onChange={e => handleFormField("duracao", e.target.value)} />
+            <Input type="number" min={1} value={form.duracao} onChange={e => handleFormField("duracao", e.target.value)} disabled={editMode === 'editar'} />
           </div>
           <div className="space-y-2">
             <Label>Valor (R$)</Label>
-            <Input type="number" min={0} step={0.01} value={form.valor} onChange={e => handleFormField("valor", e.target.value)} placeholder="Ex: 240" />
+            <Input type="number" min={0} step={0.01} value={form.valor} onChange={e => handleFormField("valor", e.target.value)} placeholder="Ex: 240" disabled={editMode === 'reagendar'} />
           </div>
           <div className="space-y-2 col-span-2">
             <Label>Observação</Label>
-            <Input value={form.observacao} onChange={e => handleFormField("observacao", e.target.value)} placeholder="Observações sobre a aula..." />
+            <Input value={form.observacao} onChange={e => handleFormField("observacao", e.target.value)} placeholder="Observações sobre a aula..." disabled={editMode === 'reagendar'} />
           </div>
           {!editingId && (
             <div className="col-span-2 flex items-center gap-3 pt-1">
@@ -1818,7 +1846,7 @@ function App() {
           <div className="text-[10px] text-white/30 font-semibold uppercase tracking-widest px-2 pb-1.5 pt-1">
             {!sidebarCollapsed && "Navegação"}
           </div>
-          {tabs.map(t => {
+          {tabs.filter(t => user?.role !== "PROFESSOR" || (t.value !== "financeiro" && t.value !== "pagamento")).map(t => {
             const Icon = t.icon;
             const isActive = section === t.value;
             return (
@@ -2107,7 +2135,7 @@ function App() {
                  <CalendarDays className="size-4.5 text-primary" />}
               </div>
               <div>
-                <DialogTitle>{editingId ? "Editar" : "Novo"} {section === "salas" ? "Sala" : section === "professores" ? "Professor" : section === "alunos" ? "Aluno" : "Agendamento"}</DialogTitle>
+                <DialogTitle>{editingId ? (editMode === 'reagendar' ? "Reagendar" : "Editar") : "Novo"} {section === "salas" ? "Sala" : section === "professores" ? "Professor" : section === "alunos" ? "Aluno" : "Agendamento"}</DialogTitle>
               </div>
             </div>
           </DialogHeader>
@@ -2121,7 +2149,7 @@ function App() {
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => { setDialogOpen(false); resetForm(); }}>Cancelar</Button>
             <Button onClick={handleSubmit} disabled={section === "agendamentos" && conflitos.length > 0} className="shadow-xs">
-              {editingId ? "Salvar" : "Criar"}
+              {editingId ? (editMode === 'reagendar' ? "Reagendar" : "Salvar") : "Criar"}
             </Button>
           </DialogFooter>
         </DialogContent>
