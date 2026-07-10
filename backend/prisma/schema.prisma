@@ -48,6 +48,7 @@ model Professor {
   profissao  String?
 
   agendamentos Agendamento[]
+  pagamentosProfessor PagamentoProfessor[]
 }
 
 model Aluno {
@@ -58,6 +59,8 @@ model Aluno {
   matricula  String?
   redeSocial String?
   diaPagamento Int?
+  dataInicioContrato DateTime?
+  dataFimContrato DateTime?
 
   agendamentos Agendamento[]
   pagamentos   Pagamento[]
@@ -82,6 +85,22 @@ model Pagamento {
 enum AgendamentoStatus {
   AGENDADO
   CONCLUIDO
+}
+
+model PagamentoProfessor {
+  id        String   @id @default(uuid())
+  professorId String
+  mes       Int
+  ano       Int
+  valor     Float
+  pago      Boolean  @default(false)
+  pagoEm    DateTime?
+  tipoPagamento String?
+  comprovanteUrl String?
+
+  professor Professor @relation(fields: [professorId], references: [id])
+
+  @@unique([professorId, mes, ano])
 }
 
 model Agendamento {

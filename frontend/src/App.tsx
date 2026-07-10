@@ -31,7 +31,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, AlertCircle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp, Eye, EyeOff, FileText } from "lucide-react";
+import { Plus, Trash2, CheckCircle2, MoreHorizontal, Pencil, AlertTriangle, AlertCircle, Building2, GraduationCap, BookUser, CalendarDays, Music, PanelLeftClose, PanelLeftOpen, ListFilter, CalendarClock, Search, User, LogOut, Wallet, DollarSign, Clock, TrendingUp, Eye, EyeOff, FileText, ArrowUpFromLine } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -42,7 +42,7 @@ import {
 type Sala = { id: string; nome: string; capacidade: number; descricao?: string | null };
 type Usuario = { id: string; cpf: string; nome: string; telefone: string; email: string };
 type Professor = { id: string; usuario: Usuario; profissao?: string | null };
-type Aluno = { id: string; usuario: Usuario; matricula?: string | null; redeSocial?: string | null; diaPagamento?: number | null };
+type Aluno = { id: string; usuario: Usuario; matricula?: string | null; redeSocial?: string | null; diaPagamento?: number | null; dataInicioContrato?: string | null; dataFimContrato?: string | null };
 type Agendamento = {
   id: string;
   professorId: string;
@@ -66,16 +66,30 @@ type GanhosResumo = {
   totalLiquidoProfessor: number;
   totalAulas: number;
   totalHoras: number;
+  totalAlunoMes: number;
+  totalAlunosUnicos: number;
+  totalAlunosMultiProfessor: number;
+  totalAlunosMultiAula: number;
   mediaPorAula: number;
   mediaAlunoMes: number;
   periodo: { de: string | null; ate: string | null };
 };
 
-type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number; professorShare: number; porcentagem: number; alunoMeses: number };
-type GanhosMes = { mes: string; aulas: number; valor: number; professorShare: number };
+type GanhosProfessor = { id: string; nome: string; aulas: number; valor: number; horas: number; professorShare: number; porcentagem: number; alunoMeses: number; alunos: number };
+type GanhosMes = { mes: string; aulas: number; alunos: number; alunoMeses: number; valor: number; professorShare: number };
 
 type PagamentoInfo = {
   id: string;
+  valor?: number | null;
+  tipoPagamento?: string | null;
+  pagoEm: string;
+  comprovanteUrl?: string | null;
+};
+
+type PagamentoHistorico = {
+  id: string;
+  mes: number;
+  ano: number;
   valor?: number | null;
   tipoPagamento?: string | null;
   pagoEm: string;
@@ -88,9 +102,51 @@ type PagamentoAluno = {
   matricula?: string | null;
   redeSocial?: string | null;
   diaPagamento: number;
+  dataInicioContrato?: string | null;
+  dataFimContrato?: string | null;
+  temAgendamento: boolean;
   pago: boolean;
   status: "pago" | "atrasado" | "em_aberto";
   pagamento: PagamentoInfo | null;
+  historicoPagamentos: PagamentoHistorico[];
+};
+
+type AulaProfessor = {
+  id: string;
+  data: string;
+  horario: string;
+  duracao: number;
+  aluno: string;
+  sala: string;
+};
+
+type PagamentoProfInfo = {
+  id: string;
+  valor?: number | null;
+  pago: boolean;
+  pagoEm?: string | null;
+  tipoPagamento?: string | null;
+  comprovanteUrl?: string | null;
+};
+
+type PagamentoProfessorData = {
+  id: string;
+  nome: string;
+  aulas: AulaProfessor[];
+  totalAulas: number;
+  totalHoras: number;
+  alunosUnicos: number;
+  valorBruto: number;
+  valorReceber: number;
+  pago: boolean;
+  pagamentoProf: PagamentoProfInfo | null;
+  historicoPagamentos: PagamentoHistorico[];
+};
+
+type PagamentoProfessorResponse = {
+  mes: number;
+  ano: number;
+  professores: PagamentoProfessorData[];
 };
 
 type GanhosData = {
@@ -100,9 +156,12 @@ type GanhosData = {
   aulas: Agendamento[];
 };
 
-type Section = "salas" | "professores" | "alunos" | "agendamentos" | "financeiro" | "pagamento";
+type Section = "salas" | "professores" | "alunos" | "agendamentos" | "financeiro" | "recebimentos" | "pagamento";
 
 const backendUrl = import.meta.env.VITE_API_URL ?? `http://${location.hostname}:3000`;
+
+const plural = (n: number, s: string) => `${n} ${s}${n !== 1 ? "s" : ""}`;
+const fmtValorPag = (v?: number | null) => v != null ? `R$ ${v.toFixed(2)}` : "—";
 
 function createCroppedBlob(
   imageSrc: string,
@@ -140,24 +199,28 @@ const statusBadge: Record<string, string> = {
   CONCLUIDO: "bg-emerald-100 text-emerald-700 border-emerald-200",
 };
 
-const tabs: { value: Section; label: string; icon: React.ComponentType<{ className?: string }> }[] = [
-  { value: "salas", label: "Salas", icon: Building2 },
-  { value: "professores", label: "Professores", icon: GraduationCap },
-  { value: "alunos", label: "Alunos", icon: BookUser },
-  { value: "agendamentos", label: "Agendamentos", icon: CalendarDays },
-  { value: "financeiro", label: "Financeiro", icon: Wallet },
-  { value: "pagamento", label: "Pagamento", icon: DollarSign },
+type TabItem = { value: Section; label: string; icon: React.ComponentType<{ className?: string }>; roles: ("ADMIN" | "PROFESSOR" | "ALUNO")[] };
+
+const tabs: TabItem[] = [
+  { value: "salas", label: "Salas", icon: Building2, roles: ["ADMIN"] },
+  { value: "professores", label: "Professores", icon: GraduationCap, roles: ["ADMIN", "PROFESSOR"] },
+  { value: "alunos", label: "Alunos", icon: BookUser, roles: ["ADMIN", "PROFESSOR"] },
+  { value: "agendamentos", label: "Agendamentos", icon: CalendarDays, roles: ["ADMIN", "PROFESSOR", "ALUNO"] },
+  { value: "financeiro", label: "Financeiro", icon: Wallet, roles: ["ADMIN", "PROFESSOR"] },
+  { value: "recebimentos", label: "Recebimentos", icon: DollarSign, roles: ["ADMIN"] },
+  { value: "pagamento", label: "Pagamento", icon: ArrowUpFromLine, roles: ["ADMIN"] },
 ];
 
 function App() {
   const [section, setSection] = useState<Section>(() => {
     const hash = location.hash.replace("#", "") as Section;
-    const allowed: Section[] = ["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"];
-    if (!allowed.includes(hash)) return "agendamentos";
+    const allSections: Section[] = ["salas", "professores", "alunos", "agendamentos", "financeiro", "recebimentos", "pagamento"];
+    if (!allSections.includes(hash)) return "agendamentos";
     const saved = localStorage.getItem("user");
     if (saved) {
       const u = JSON.parse(saved);
-      if (u.role === "PROFESSOR" && (hash === "financeiro" || hash === "pagamento")) return "agendamentos";
+      const tab = tabs.find(t => t.value === hash);
+      if (tab && !tab.roles.includes(u.role)) return "agendamentos";
     }
     return hash;
   });
@@ -184,7 +247,7 @@ function App() {
     nome: "", descricao: "", capacidade: "",
     cpf: "", email: "", telefone: "", profissao: "", matricula: "",
     professorId: "", alunoId: "", salaId: "",
-    data: "", horario: "", duracao: "60", valor: "", observacao: "",
+    data: "", horario: "", duracao: "60", valor: "240", observacao: "",
   });
   const [repetirSemanas, setRepetirSemanas] = useState(12);
   const [aulaExperimental, setAulaExperimental] = useState(false);
@@ -219,13 +282,17 @@ function App() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<{ width: number; height: number; x: number; y: number } | null>(null);
   const [ganhos, setGanhos] = useState<GanhosData | null>(null);
   const [filtroDataInicio, setFiltroDataInicio] = useState(() => {
-    const d = new Date(); d.setMonth(d.getMonth() - 1);
+    const d = new Date(); d.setDate(1);
     return d.toISOString().slice(0, 10);
   });
-  const [filtroDataFim, setFiltroDataFim] = useState(() => new Date().toISOString().slice(0, 10));
+  const [filtroDataFim, setFiltroDataFim] = useState(() => {
+    const d = new Date();
+    return new Date(d.getFullYear(), d.getMonth() + 1, 0).toISOString().slice(0, 10);
+  });
   const [ganhosLoading, setGanhosLoading] = useState(false);
-  const [pagamentos, setPagamentos] = useState<PagamentoAluno[]>([]);
-  const [pagamentosLoading, setPagamentosLoading] = useState(false);
+  const [pagamentosComAula, setPagamentosComAula] = useState<PagamentoAluno[]>([]);
+  const [pagamentosContratoEncerrado, setPagamentosContratoEncerrado] = useState<PagamentoAluno[]>([]);
+  const [pagamentosLoading, setPagamentosLoading] = useState(true);
   const [pagamentoMes, setPagamentoMes] = useState(() => new Date().getMonth() + 1);
   const [pagamentoAno, setPagamentoAno] = useState(() => new Date().getFullYear());
   const [pagamentoDialogOpen, setPagamentoDialogOpen] = useState(false);
@@ -238,38 +305,74 @@ function App() {
   const [comprovanteViewAluno, setComprovanteViewAluno] = useState<PagamentoAluno | null>(null);
   const [comprovanteFullOpen, setComprovanteFullOpen] = useState(false);
   const [comprovanteFullId, setComprovanteFullId] = useState<string | null>(null);
+  const [comprovanteFullProf, setComprovanteFullProf] = useState(false);
+
+  const [pagamentoProfLoading, setPagamentoProfLoading] = useState(true);
+  const [pagamentoProfData, setPagamentoProfData] = useState<PagamentoProfessorResponse | null>(null);
+  const [pagandoProfessor, setPagandoProfessor] = useState<PagamentoProfessorData | null>(null);
+  const [pagamentoProfForm, setPagamentoProfForm] = useState({ valor: "", tipoPagamento: "PIX" });
+  const [pagamentoProfDialogOpen, setPagamentoProfDialogOpen] = useState(false);
+  const [pagamentoProfFile, setPagamentoProfFile] = useState<File | null>(null);
+  const [pagamentoProfError, setPagamentoProfError] = useState("");
+  const [relatorioGeralOpen, setRelatorioGeralOpen] = useState(false);
+
+  const carregarGanhos = async () => {
+    if (!user) return;
+    setGanhosLoading(true);
+    try {
+      const params = new URLSearchParams({ dataInicio: filtroDataInicio, dataFim: filtroDataFim });
+      if (user.role === "PROFESSOR" && user.professorId) {
+        params.set("professorId", user.professorId);
+      }
+      const res = await apiFetch(`${backendUrl}/api/ganhos?${params}`);
+      if (res.ok) setGanhos(await res.json());
+    } catch (err) {
+      console.error("Erro ao carregar financeiro:", err);
+    } finally {
+      setGanhosLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (section !== "financeiro" || !user) return;
-    (async () => {
-      setGanhosLoading(true);
-      try {
-        const params = new URLSearchParams({ dataInicio: filtroDataInicio, dataFim: filtroDataFim });
-        if (user.role === "PROFESSOR" && user.professorId) {
-          params.set("professorId", user.professorId);
-        }
-        const res = await apiFetch(`${backendUrl}/api/ganhos?${params}`);
-        if (res.ok) setGanhos(await res.json());
-      } catch (err) {
-        console.error("Erro ao carregar financeiro:", err);
-      } finally {
-        setGanhosLoading(false);
-      }
-    })();
+    carregarGanhos();
   }, [section, filtroDataInicio, filtroDataFim, user]);
 
   useEffect(() => {
     if (section !== "pagamento" || !user) return;
     (async () => {
+      setPagamentoProfLoading(true);
+      try {
+        const res = await apiFetch(`${backendUrl}/api/pagamentos-professor?mes=${pagamentoMes}&ano=${pagamentoAno}`);
+        if (res.ok) setPagamentoProfData(await res.json());
+        else setPagamentoProfData(null);
+      } catch (err) {
+        console.error("Erro ao carregar pagamentos de professores:", err);
+        setPagamentoProfData(null);
+      } finally {
+        setPagamentoProfLoading(false);
+      }
+    })();
+  }, [section, user, pagamentoMes, pagamentoAno]);
+
+  useEffect(() => {
+    if (section !== "recebimentos" || !user) return;
+    (async () => {
       setPagamentosLoading(true);
       try {
         const res = await apiFetch(`${backendUrl}/api/pagamentos?mes=${pagamentoMes}&ano=${pagamentoAno}`);
         if (res.ok) {
-          const json = await res.json();
-          setPagamentos(json.alunos);
+          const data = await res.json();
+          setPagamentosComAula(data.alunosComAula ?? []);
+          setPagamentosContratoEncerrado(data.alunosContratoEncerrado ?? []);
+        } else {
+          setPagamentosComAula([]);
+          setPagamentosContratoEncerrado([]);
         }
       } catch (err) {
-        console.error("Erro ao carregar pagamentos:", err);
+        console.error("Erro ao carregar pagamentos de alunos:", err);
+        setPagamentosComAula([]);
+        setPagamentosContratoEncerrado([]);
       } finally {
         setPagamentosLoading(false);
       }
@@ -296,14 +399,18 @@ function App() {
   useEffect(() => {
     const onHashChange = () => {
       const hash = location.hash.replace("#", "") as Section;
-      if (["salas", "professores", "alunos", "agendamentos", "financeiro", "pagamento"].includes(hash)) {
-        if (user?.role === "PROFESSOR" && (hash === "financeiro" || hash === "pagamento")) return;
+      const allSections: Section[] = ["salas", "professores", "alunos", "agendamentos", "financeiro", "recebimentos", "pagamento"];
+      if (allSections.includes(hash)) {
+        if (user) {
+          const tab = tabs.find(t => t.value === hash);
+          if (tab && !tab.roles.includes(user.role as "ADMIN" | "PROFESSOR" | "ALUNO")) return;
+        }
         setSection(hash);
       }
     };
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
-  }, []);
+  }, [user]);
 
   const handleLogin = async () => {
     if (!loginEmail || !loginSenha) { setLoginError("Preencha email e senha"); return; }
@@ -495,21 +602,22 @@ function App() {
       try {
         const headers: Record<string, string> = {};
         if (user?.token) headers["Authorization"] = `Bearer ${user.token}`;
-        const [a, b, c] = await Promise.all([
+        const fetches: Promise<Response>[] = [
           fetch(`${backendUrl}/api/salas`, { headers }),
           fetch(`${backendUrl}/api/professores`, { headers }),
-          fetch(`${backendUrl}/api/alunos`, { headers }),
-        ]);
-        if (!a.ok || !b.ok || !c.ok) {
-          if (a.status === 401 || b.status === 401 || c.status === 401) {
-            setUser(null);
-            localStorage.removeItem("user");
-            return;
-          }
-          throw new Error("Falha ao carregar dados");
+        ];
+        if (user?.role !== "ALUNO") fetches.push(fetch(`${backendUrl}/api/alunos`, { headers }));
+        const responses = await Promise.all(fetches);
+        if (responses.some(r => r.status === 401)) {
+          setUser(null);
+          localStorage.removeItem("user");
+          return;
         }
-        const [sd, pd, ad] = await Promise.all([a.json(), b.json(), c.json()]);
-        setSalas(sd); setProfessores(pd); setAlunos(ad);
+        const errResponse = responses.find(r => !r.ok);
+        if (errResponse) throw new Error("Falha ao carregar dados");
+        const data = await Promise.all(responses.map(r => r.json()));
+        setSalas(data[0]); setProfessores(data[1]);
+        if (user?.role !== "ALUNO") setAlunos(data[2]);
 
         const agdUrl = `${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`;
         const agdRes = await fetch(agdUrl, { headers });
@@ -537,10 +645,10 @@ function App() {
     setRepetirSemanas(12);
     setAulaExperimental(false);
     setForm({
-      nome: "", descricao: "", capacidade: "",
-    cpf: "", email: "", telefone: "", profissao: "", matricula: "", redeSocial: "", diaPagamento: "",
+      nome: "", descricao: "", capacidade: "1",
+    cpf: "", email: "", telefone: "", profissao: "", matricula: "", redeSocial: "", diaPagamento: "", dataInicioContrato: "", dataFimContrato: "",
       professorId: "", alunoId: "", salaId: "",
-    data: "", horario: "", duracao: "60", valor: "", observacao: "",
+    data: "", horario: "", duracao: "60", valor: "240", observacao: "",
     });
     setError(null);
   };
@@ -566,7 +674,7 @@ function App() {
       setSection("professores");
     } else if ("matricula" in item) {
       const a = item as Aluno;
-      setForm(p => ({ ...p, nome: a.usuario.nome, cpf: a.usuario.cpf, email: a.usuario.email, telefone: a.usuario.telefone, matricula: a.matricula ?? "", redeSocial: a.redeSocial ?? "", diaPagamento: a.diaPagamento ? String(a.diaPagamento) : "" }));
+      setForm(p => ({ ...p, nome: a.usuario.nome, cpf: a.usuario.cpf, email: a.usuario.email, telefone: a.usuario.telefone, matricula: a.matricula ?? "", redeSocial: a.redeSocial ?? "", diaPagamento: a.diaPagamento ? String(a.diaPagamento) : "", dataInicioContrato: a.dataInicioContrato ? a.dataInicioContrato.slice(0, 10) : "", dataFimContrato: a.dataFimContrato ? a.dataFimContrato.slice(0, 10) : "" }));
       setSection("alunos");
     } else {
       const a = item as Agendamento;
@@ -642,7 +750,7 @@ function App() {
     const fetches: Promise<Response>[] = [];
     if (section === "salas" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/salas`, { headers }));
     if (section === "professores" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/professores`, { headers }));
-    if (section === "alunos" || section === "agendamentos") fetches.push(fetch(`${backendUrl}/api/alunos`, { headers }));
+    if (section === "alunos" || (section === "agendamentos" && user?.role !== "ALUNO")) fetches.push(fetch(`${backendUrl}/api/alunos`, { headers }));
     const agdUrl = `${backendUrl}/api/agendamentos${user?.role === "PROFESSOR" && user.professorId ? `?professorId=${user.professorId}` : ""}`;
     fetches.push(fetch(agdUrl, { headers }));
 
@@ -652,13 +760,14 @@ function App() {
       localStorage.removeItem("user");
       return;
     }
-    const data = await Promise.all(results.map(r => r.json()));
+    const valid = results.filter(r => r.ok);
+    const data = await Promise.all(valid.map(r => r.json()));
 
     let idx = 0;
-    if (section === "salas" || section === "agendamentos") { setSalas(data[idx]); idx++; }
-    if (section === "professores" || section === "agendamentos") { setProfessores(data[idx]); idx++; }
-    if (section === "alunos" || section === "agendamentos") { setAlunos(data[idx]); idx++; }
-    setAgendamentos(data[idx]);
+    if (section === "salas" || section === "agendamentos") { if (data[idx] !== undefined) setSalas(data[idx]); idx++; }
+    if (section === "professores" || section === "agendamentos") { if (data[idx] !== undefined) setProfessores(data[idx]); idx++; }
+    if (section === "alunos" || (section === "agendamentos" && user?.role !== "ALUNO")) { if (data[idx] !== undefined) setAlunos(data[idx]); idx++; }
+    if (data[idx] !== undefined) setAgendamentos(data[idx]);
   };
 
   const handleSubmit = async () => {
@@ -666,13 +775,25 @@ function App() {
 
     if (section === "agendamentos") {
       if (editMode === 'reagendar') {
-        if (!form.data || !form.horario || !form.duracao) {
-          setError("Preencha data, horário e duração");
+        const faltando: string[] = [];
+        if (!form.data) faltando.push("Data");
+        if (!form.horario) faltando.push("Horário");
+        if (!form.duracao) faltando.push("Duração");
+        if (faltando.length) {
+          setError(`Preencha os campos obrigatórios: ${faltando.join(", ")}`);
           return;
         }
-      } else if (!form.professorId || !form.alunoId || !form.salaId || !form.data || !form.horario) {
-        setError("Preencha todos os campos obrigatórios");
-        return;
+      } else {
+        const faltando: string[] = [];
+        if (!form.professorId) faltando.push("Professor");
+        if (!form.alunoId) faltando.push("Aluno");
+        if (!form.salaId) faltando.push("Sala");
+        if (!form.data) faltando.push("Data");
+        if (!form.horario) faltando.push("Horário");
+        if (faltando.length) {
+          setError(`Preencha os campos obrigatórios: ${faltando.join(", ")}`);
+          return;
+        }
       }
       if (conflitos.length > 0) {
         setError("Resolva os conflitos de horário antes de salvar");
@@ -685,8 +806,15 @@ function App() {
       if (nomeDuplicado) { setError(`Já existe uma sala cadastrada com o nome "${form.nome}"`); return; }
     }
     if (section === "professores" || section === "alunos") {
-      if (!form.nome || !form.cpf || !form.email || !form.telefone) {
-        setError("Preencha todos os campos obrigatórios"); return;
+      const faltando: string[] = [];
+      if (!form.nome) faltando.push("Nome");
+      if (!form.cpf) faltando.push("CPF");
+      if (!form.email) faltando.push("Email");
+      if (!form.telefone) faltando.push("Telefone");
+      if (section === "alunos" && !form.matricula) faltando.push("Matrícula");
+      if (section === "alunos" && !form.diaPagamento) faltando.push("Dia de Pagamento");
+      if (faltando.length) {
+        setError(`Preencha os campos obrigatórios: ${faltando.join(", ")}`); return;
       }
       const todosUsuarios = [...professores.map(p => p.usuario), ...alunos.map(a => a.usuario)];
       const usuarioAtualId = section === "professores"
@@ -710,7 +838,7 @@ function App() {
       } else if (section === "professores") {
         payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, profissao: form.profissao || null };
       } else if (section === "alunos") {
-        payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, matricula: form.matricula || null, redeSocial: form.redeSocial || null, diaPagamento: form.diaPagamento || null };
+        payload = { cpf: form.cpf, nome: form.nome, telefone: form.telefone, email: form.email, matricula: form.matricula, redeSocial: form.redeSocial || null, diaPagamento: form.diaPagamento, dataInicioContrato: form.dataInicioContrato || null, dataFimContrato: form.dataFimContrato || null };
       } else {
         endpoint = "agendamentos";
         if (editMode === 'reagendar') {
@@ -720,14 +848,14 @@ function App() {
         } else if (editMode === 'editar') {
           payload = {
             professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
-            valor: form.valor ? Number(form.valor) : null,
+            valor: Number(form.valor) || 240,
             observacao: form.observacao || null,
           };
         } else {
           payload = {
             professorId: form.professorId, alunoId: form.alunoId, salaId: form.salaId,
             data: form.data, horario: form.horario, duracao: Number(form.duracao) || 60,
-            valor: aulaExperimental ? 0 : (form.valor ? Number(form.valor) : null),
+            valor: aulaExperimental ? 0 : (Number(form.valor) || 240),
             observacao: form.observacao || null,
           };
         }
@@ -764,6 +892,7 @@ function App() {
         }
       }
       await refreshData();
+      carregarGanhos();
       setDialogOpen(false);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro");
@@ -793,6 +922,7 @@ function App() {
       setDeleteDialogOpen(false);
       setDeletingItem(null);
       await refreshData();
+      carregarGanhos();
     } catch (err) {
       setDeleteDialogOpen(false);
       setDeletingItem(null);
@@ -812,6 +942,7 @@ function App() {
         throw new Error(errData?.error || "Falha ao registrar aula");
       }
       await refreshData();
+      carregarGanhos();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro");
     }
@@ -983,7 +1114,6 @@ function App() {
                                           <span className="text-muted-foreground text-[10px] block leading-tight uppercase tracking-wider">Aluno</span>
                                           <span className="font-medium truncate block text-sm">{a.aluno.usuario.nome}</span>
                                         </div>
-                                        {a.valor ? <span className="font-mono text-xs tabular-nums text-muted-foreground shrink-0">R$ {Number(a.valor).toFixed(2).replace('.', ',')}</span> : <span className="text-[10px] text-muted-foreground/30 shrink-0">—</span>}
                                         <Badge className={`${statusBadge[a.status]} text-[10px] px-2 py-0.5 shrink-0`}>{statusLabel[a.status]}</Badge>
                                         <DropdownMenu>
                                           <DropdownMenuTrigger asChild>
@@ -1105,7 +1235,7 @@ function App() {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <span className="size-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin mb-4" />
-          <p>Carregando dados financeiros...</p>
+          <p>Carregando dados...</p>
         </div>
       );
     }
@@ -1113,7 +1243,7 @@ function App() {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
           <Wallet className="size-12 mb-4 text-muted-foreground/30" />
-          <p>Nenhum dado financeiro encontrado</p>
+          <p>Nenhum dado encontrado no período</p>
         </div>
       );
     }
@@ -1143,10 +1273,11 @@ function App() {
                 <Input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)} className="h-9 w-40 text-sm" />
               </div>
               <div className="flex items-center gap-1 pb-0.5 ml-1">
-                {["30 dias", "3 meses", "1 ano"].map(label => (
+                {["Este mês", "30 dias", "3 meses", "1 ano"].map(label => (
                   <Button key={label} variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all" onClick={() => {
                     const d = new Date();
-                    if (label === "30 dias") d.setMonth(d.getMonth() - 1);
+                    if (label === "Este mês") { d.setDate(1); }
+                    else if (label === "30 dias") d.setMonth(d.getMonth() - 1);
                     else if (label === "3 meses") d.setMonth(d.getMonth() - 3);
                     else d.setFullYear(d.getFullYear() - 1);
                     setFiltroDataInicio(d.toISOString().slice(0, 10));
@@ -1158,12 +1289,13 @@ function App() {
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
             { label: "Valor Bruto", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign, subtitle: "Faturamento total" },
             { label: "Líquido (Escola)", value: fmtValor(ganhos.resumo.totalLiquidoEscola), icon: TrendingUp, subtitle: "30% de comissão" },
             { label: "Professores", value: fmtValor(ganhos.resumo.totalLiquidoProfessor), icon: GraduationCap, subtitle: "70% repassado" },
-            { label: "Aulas Realizadas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas", subtitle: `${ganhos.resumo.totalHoras}h no período` },
+            { label: "Aulas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas", subtitle: "aulas no período" },
+            { label: "Alunos", value: ganhos.resumo.totalAlunosUnicos + ganhos.resumo.totalAlunosMultiProfessor, icon: BookUser, suffix: (ganhos.resumo.totalAlunosUnicos + ganhos.resumo.totalAlunosMultiProfessor) === 1 ? " aluno" : " alunos", subtitle: `${ganhos.resumo.totalAlunosMultiAula} com mais de 1 aula` },
           ].map(card => (
             <Card key={card.label} className="shadow-sm border-border/60 overflow-hidden">
               <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
@@ -1197,21 +1329,19 @@ function App() {
               </div>
             ) : (
               <div className="divide-y divide-border/40">
-                <div className="grid grid-cols-[1fr_70px_90px_90px] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
+                <div className="grid grid-cols-[1fr_60px_90px] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
                   <span>Professor</span>
                   <span className="text-right">Alunos</span>
                   <span className="text-right">Valor Bruto</span>
-                  <span className="text-right">Ganho (70%)</span>
                 </div>
                 {ganhos.porProfessor.map(p => (
-                  <div key={p.id} className="px-4 py-3 grid grid-cols-[1fr_70px_90px_90px] gap-3 items-center hover:bg-muted/20 transition-colors">
+                  <div key={p.id} className="px-4 py-3 grid grid-cols-[1fr_60px_90px] gap-3 items-center hover:bg-muted/20 transition-colors">
                     <div className="min-w-0">
                       <span className="text-sm font-medium truncate block">{p.nome}</span>
-                      <span className="text-[10px] text-muted-foreground/50">{p.alunoMeses} aluno{String(p.alunoMeses) !== "1" ? "s" : ""}-mês · {p.aulas} aula{String(p.aulas) !== "1" ? "s" : ""}</span>
+                      <span className="text-[10px] text-muted-foreground/50">{p.aulas} aula{String(p.aulas) !== "1" ? "s" : ""} · {p.horas}h</span>
                     </div>
                     <span className="font-mono text-sm tabular-nums text-center text-muted-foreground">{p.alunos}</span>
-                    <span className="font-mono text-sm text-right text-muted-foreground">{fmtValor(p.valor)}</span>
-                    <span className="font-mono text-sm font-semibold tabular-nums text-right">{fmtValor(p.professorShare)}</span>
+                    <span className="font-mono text-sm font-semibold tabular-nums text-right text-muted-foreground">{fmtValor(p.valor)}</span>
                   </div>
                 ))}
               </div>
@@ -1231,19 +1361,21 @@ function App() {
             </CardHeader>
             <CardContent className="p-0">
               <div className="divide-y divide-border/40">
-                <div className="grid grid-cols-[1fr_60px_1fr] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
+                <div className="grid grid-cols-[1fr_50px_70px_1fr] gap-3 px-4 py-2 text-[10px] uppercase tracking-wider text-muted-foreground/50 font-semibold">
                   <span>Mês</span>
                   <span className="text-right">Aulas</span>
+                  <span className="text-right">Alunos</span>
                   <span className="text-right">Receita</span>
                 </div>
                 {ganhos.porMes.map(m => {
                   const [ano, mes] = m.mes.split("-");
                   const nomeMes = new Date(Number(ano), Number(mes) - 1).toLocaleDateString("pt-BR", { month: "long" });
                   return (
-                    <div key={m.mes} className="grid grid-cols-[1fr_60px_1fr] gap-3 px-4 py-3 items-center hover:bg-muted/20 transition-colors">
+                    <div key={m.mes} className="grid grid-cols-[1fr_50px_70px_1fr] gap-3 px-4 py-3 items-center hover:bg-muted/20 transition-colors">
                       <span className="text-sm font-medium capitalize">{nomeMes} {ano}</span>
                       <span className="text-sm font-mono tabular-nums text-right">{m.aulas}</span>
-                      <span className="font-mono text-sm font-semibold tabular-nums text-right">{fmtValor(m.professorShare)}</span>
+                      <span className="text-sm font-mono tabular-nums text-center text-muted-foreground">{m.alunos}</span>
+                      <span className="font-mono text-sm font-semibold tabular-nums text-right">{fmtValor(m.valor)}</span>
                     </div>
                   );
                 })}
@@ -1274,7 +1406,7 @@ function App() {
       });
       if (res.ok) {
         const data = await res.json();
-        setPagamentos(prev => prev.map(p =>
+        const atualizar = (prev: PagamentoAluno[]) => prev.map(p =>
           p.id === pagandoAluno.id ? {
             ...p,
             pago: true,
@@ -1287,7 +1419,9 @@ function App() {
               comprovanteUrl: data.comprovanteUrl,
             },
           } : p
-        ));
+        );
+        setPagamentosComAula(atualizar(pagamentosComAula));
+        setPagamentosContratoEncerrado(atualizar(pagamentosContratoEncerrado));
         setPagamentoDialogOpen(false);
         setPagandoAluno(null);
         setComprovanteFile(null);
@@ -1301,7 +1435,127 @@ function App() {
     }
   };
 
-  const renderPagamento = () => {
+  const confirmarPagamentoProfessor = async () => {
+    if (!pagandoProfessor) return;
+    setPagamentoProfError("");
+    try {
+      const formData = new FormData();
+      formData.append("professorId", pagandoProfessor.id);
+      formData.append("mes", String(pagamentoMes));
+      formData.append("ano", String(pagamentoAno));
+      formData.append("valor", pagamentoProfForm.valor || "0");
+      formData.append("tipoPagamento", pagamentoProfForm.tipoPagamento);
+      if (pagamentoProfFile) formData.append("comprovante", pagamentoProfFile);
+
+      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/pagar`, {
+        method: "POST",
+        body: formData,
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setPagamentoProfData(prev => prev ? {
+          ...prev,
+          professores: prev.professores.map(p =>
+            p.id === pagandoProfessor.id ? {
+              ...p,
+              pago: true,
+              pagamentoProf: {
+                id: data.id,
+                valor: data.valor,
+                pago: true,
+                pagoEm: data.pagoEm,
+                tipoPagamento: data.tipoPagamento,
+                comprovanteUrl: data.comprovanteUrl,
+              },
+              historicoPagamentos: [
+                {
+                  id: data.id,
+                  mes: pagamentoMes,
+                  ano: pagamentoAno,
+                  valor: data.valor,
+                  tipoPagamento: data.tipoPagamento,
+                  pagoEm: data.pagoEm,
+                  comprovanteUrl: data.comprovanteUrl,
+                },
+                ...(p.historicoPagamentos ?? []),
+              ],
+            } : p
+          ),
+        } : prev);
+        setPagamentoProfDialogOpen(false);
+        setPagandoProfessor(null);
+        setPagamentoProfFile(null);
+      } else {
+        const errData = await res.json().catch(() => ({}));
+        setPagamentoProfError(errData?.error || `Erro ${res.status}: ${res.statusText}`);
+      }
+    } catch (err) {
+      setPagamentoProfError(err instanceof Error ? err.message : "Erro inesperado");
+    }
+  };
+
+  const navegarMesPag = (direcao: number) => {
+    let mes = pagamentoMes + direcao;
+    let ano = pagamentoAno;
+    if (mes < 1) { mes = 12; ano--; }
+    if (mes > 12) { mes = 1; ano++; }
+    setPagamentoMes(mes);
+    setPagamentoAno(ano);
+  };
+
+  const mesNavegacao = (label: string) => {
+    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const nomeMes = meses[pagamentoMes - 1];
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <div className="h-0.5 bg-gradient-to-r from-violet-200/60 via-violet-400/40 to-violet-200/60" />
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMesPag(-1)}>
+              <span className="text-lg leading-none">‹</span>
+              <span className="text-sm">Anterior</span>
+            </Button>
+            <div className="text-center">
+              <span className="text-base font-semibold">{nomeMes} {pagamentoAno}</span>
+              <span className="text-xs text-muted-foreground/50 block">{label}</span>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMesPag(1)}>
+              <span className="text-sm">Próximo</span>
+              <span className="text-lg leading-none">›</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
+  const renderRecebimentos = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Recebimentos</h1>
+      </div>
+      {mesNavegacao("Mês de referência")}
+      <RenderPagamentoAlunos />
+    </div>
+  );
+
+  const renderPagamento = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Pagamento de Professores</h1>
+      </div>
+      {mesNavegacao("Mês de referência")}
+      <div className="flex justify-end">
+        <Button variant="outline" size="sm" className="gap-1.5 text-xs" onClick={() => setRelatorioGeralOpen(true)}>
+          <FileText className="size-3.5" />
+          Relatório Geral
+        </Button>
+      </div>
+      <RenderPagamentoProfessores />
+    </div>
+  );
+
+  const RenderPagamentoAlunos = () => {
     if (pagamentosLoading) {
       return (
         <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
@@ -1311,14 +1565,9 @@ function App() {
       );
     }
 
-    const navegarMes = (direcao: number) => {
-      let mes = pagamentoMes + direcao;
-      let ano = pagamentoAno;
-      if (mes < 1) { mes = 12; ano--; }
-      if (mes > 12) { mes = 1; ano++; }
-      setPagamentoMes(mes);
-      setPagamentoAno(ano);
-    };
+    const formatDate = (d: string) => new Date(d).toLocaleDateString("pt-BR");
+    const mesRef = String(pagamentoMes).padStart(2, "0");
+    const anoRef = pagamentoAno;
 
     const abrirDialogPagamento = (a: PagamentoAluno) => {
       setPagandoAluno(a);
@@ -1329,63 +1578,100 @@ function App() {
       setPagamentoDialogOpen(true);
     };
 
-    const mesRef = String(pagamentoMes).padStart(2, "0");
-    const anoRef = pagamentoAno;
-
-    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
-    const nomeMes = meses[pagamentoMes - 1];
-
     const grupos = [
       { dia: 5, label: "Dia 5" },
       { dia: 10, label: "Dia 10" },
       { dia: 15, label: "Dia 15" },
     ];
 
+    const StudentActions = ({ a }: { a: PagamentoAluno }) => (
+      a.status === "pago" ? (
+        <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteViewAluno(a); setComprovanteViewOpen(true); }}>
+          <FileText className="size-3.5" /> Ver
+        </Button>
+      ) : (
+        <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" onClick={() => abrirDialogPagamento(a)}>
+          <DollarSign className="size-3.5" /> Registrar
+        </Button>
+      )
+    );
+
+    const temConteudo = pagamentosComAula.length > 0 || pagamentosContratoEncerrado.length > 0;
+
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight">Pagamentos</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Acompanhe os pagamentos dos alunos
-            </p>
-          </div>
-        </div>
-
-        <Card className="border-border/60 shadow-sm">
-          <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
-          <CardContent className="p-4">
-            <div className="flex items-center justify-between">
-              <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMes(-1)}>
-                <span className="text-lg leading-none">‹</span>
-                <span className="text-sm">Anterior</span>
-              </Button>
-              <div className="text-center">
-                <span className="text-base font-semibold">{nomeMes} {anoRef}</span>
-                <span className="text-xs text-muted-foreground/50 block">Mês de referência</span>
-              </div>
-              <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMes(1)}>
-                <span className="text-sm">Próximo</span>
-                <span className="text-lg leading-none">›</span>
-              </Button>
+        {pagamentosComAula.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-muted-foreground/70">
+              <CheckCircle2 className="size-4" />
+              <span className="text-sm font-semibold uppercase tracking-wider">Alunos Ativos</span>
+              <span className="text-xs text-muted-foreground/50">({plural(pagamentosComAula.length, "aluno")} com aulas no mês)</span>
             </div>
-          </CardContent>
-        </Card>
+            {grupos.map(grupo => {
+              const alunosGrupo = pagamentosComAula.filter(a => a.diaPagamento === grupo.dia);
+              if (alunosGrupo.length === 0) return null;
+              return (
+                <Card key={grupo.dia} className="shadow-sm border-border/60 overflow-hidden">
+                  <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                      <DollarSign className="size-4" />
+                      <span className="font-semibold uppercase tracking-wider">Vencimento Dia {grupo.dia}</span>
+                      <span className="text-xs font-normal text-muted-foreground/50 ml-auto">{plural(alunosGrupo.length, "aluno")}</span>
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="p-0">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="border-border/40">
+                          <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10">Aluno</TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 text-center">Vencimento</TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 text-center">Status</TableHead>
+                          <TableHead className="text-[11px] uppercase tracking-wider font-semibold text-muted-foreground/60 h-10 text-center w-28">Ação</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {alunosGrupo.map(a => (
+                          <TableRow key={a.id} className="border-border/40 hover:bg-muted/20">
+                            <TableCell className="py-3">
+                              <span className="text-sm font-medium">{a.usuario.nome}</span>
+                              {a.redeSocial && <span className="text-[10px] text-muted-foreground/50 block">{a.redeSocial}</span>}
+                            </TableCell>
+                            <TableCell className="py-3 text-center">
+                              <span className="text-sm font-mono tabular-nums">{String(a.diaPagamento).padStart(2, "0")}/{mesRef}/{anoRef}</span>
+                            </TableCell>
+                            <TableCell className="py-3 text-center">
+                              {a.status === "pago" ? (
+                                <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex">
+                                  <CheckCircle2 className="size-3" /> Pago
+                                </Badge>
+                              ) : (
+                                <Badge className={`gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex ${a.status === "atrasado" ? "bg-red-100 text-red-700 border-red-200" : "bg-amber-100 text-amber-700 border-amber-200"}`}>
+                                  <Clock className="size-3" /> {a.status === "atrasado" ? "Atrasado" : "Em Aberto"}
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell className="py-3 text-center"><StudentActions a={a} /></TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
 
-        {grupos.map(grupo => {
-          const alunosGrupo = pagamentos.filter(a => a.diaPagamento === grupo.dia);
-          if (alunosGrupo.length === 0) return null;
-
-          return (
-            <Card key={grupo.dia} className="shadow-sm border-border/60 overflow-hidden">
-              <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
-                  <DollarSign className="size-4" />
-                  <span className="font-semibold uppercase tracking-wider">Vencimento Dia {grupo.dia}</span>
-                  <span className="text-xs font-normal text-muted-foreground/50 ml-auto">{alunosGrupo.length} aluno{alunosGrupo.length !== 1 ? "s" : ""}</span>
-                </CardTitle>
-              </CardHeader>
+        {pagamentosContratoEncerrado.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-muted-foreground/70 pt-2 border-t border-border/40">
+              <Clock className="size-4" />
+              <span className="text-sm font-semibold uppercase tracking-wider">Contratos Encerrados</span>
+              <span className="text-xs text-muted-foreground/50">({plural(pagamentosContratoEncerrado.length, "aluno")})</span>
+            </div>
+            <Card className="shadow-sm border-border/60 overflow-hidden">
+              <div className="h-0.5 bg-gradient-to-r from-amber-200/60 via-amber-400/40 to-amber-200/60" />
               <CardContent className="p-0">
                 <Table>
                   <TableHeader>
@@ -1397,13 +1683,16 @@ function App() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {alunosGrupo.map(a => (
+                    {pagamentosContratoEncerrado.map(a => (
                       <TableRow key={a.id} className="border-border/40 hover:bg-muted/20">
                         <TableCell className="py-3">
                           <span className="text-sm font-medium">{a.usuario.nome}</span>
-                          {a.redeSocial && (
-                            <span className="text-[10px] text-muted-foreground/50 block">{a.redeSocial}</span>
-                          )}
+                          {a.redeSocial && <span className="text-[10px] text-muted-foreground/50 block">{a.redeSocial}</span>}
+                          <span className="text-[10px] text-muted-foreground/60 block">
+                            {a.dataInicioContrato ? `Início: ${formatDate(a.dataInicioContrato)}` : ""}
+                            {a.dataInicioContrato && a.dataFimContrato ? " • " : ""}
+                            {a.dataFimContrato ? `Fim: ${formatDate(a.dataFimContrato)}` : ""}
+                          </span>
                         </TableCell>
                         <TableCell className="py-3 text-center">
                           <span className="text-sm font-mono tabular-nums">{String(a.diaPagamento).padStart(2, "0")}/{mesRef}/{anoRef}</span>
@@ -1411,47 +1700,197 @@ function App() {
                         <TableCell className="py-3 text-center">
                           {a.status === "pago" ? (
                             <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex">
-                              <CheckCircle2 className="size-3" />
-                              Pago
+                              <CheckCircle2 className="size-3" /> Pago
                             </Badge>
                           ) : (
-                            <Badge className={`gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex ${
-                              a.status === "atrasado"
-                                ? "bg-red-100 text-red-700 border-red-200"
-                                : "bg-amber-100 text-amber-700 border-amber-200"
-                            }`}>
-                              <Clock className="size-3" />
-                              {a.status === "atrasado" ? "Atrasado" : "Em Aberto"}
+                            <Badge className={`gap-1.5 px-3 py-1.5 text-xs font-medium pointer-events-none inline-flex ${a.status === "atrasado" ? "bg-red-100 text-red-700 border-red-200" : "bg-amber-100 text-amber-700 border-amber-200"}`}>
+                              <Clock className="size-3" /> {a.status === "atrasado" ? "Atrasado" : "Em Aberto"}
                             </Badge>
                           )}
                         </TableCell>
-                        <TableCell className="py-3 text-center">
-                          {a.status === "pago" ? (
-                            <Button size="sm" variant="ghost" className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteViewAluno(a); setComprovanteViewOpen(true); }}>
-                              <FileText className="size-3.5" />
-                              Ver
-                            </Button>
-                          ) : (
-                            <Button size="sm" variant="outline" className="h-8 text-xs gap-1.5 text-emerald-600 border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700" onClick={() => abrirDialogPagamento(a)}>
-                              <DollarSign className="size-3.5" />
-                              Pagar
-                            </Button>
-                          )}
-                        </TableCell>
+                        <TableCell className="py-3 text-center"><StudentActions a={a} /></TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               </CardContent>
             </Card>
-          );
-        })}
+          </div>
+        )}
 
-        {pagamentos.length === 0 && (
+        {temConteudo && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-muted-foreground/70 pt-2 border-t border-border/40">
+              <FileText className="size-4" />
+              <span className="text-sm font-semibold uppercase tracking-wider">Histórico de Pagamentos</span>
+              <span className="text-xs text-muted-foreground/50">(todos os comprovantes)</span>
+            </div>
+            {[...pagamentosComAula, ...pagamentosContratoEncerrado].filter(a => a.historicoPagamentos.length > 0).map(a => (
+              <Card key={a.id} className="shadow-sm border-border/60 overflow-hidden">
+                <div className="h-0.5 bg-gradient-to-r from-blue-200/60 via-blue-400/40 to-blue-200/60" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                    <DollarSign className="size-4" />
+                    <span className="font-medium">{a.usuario.nome}</span>
+                    {a.dataFimContrato && <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px] px-2 py-0.5">Encerrado</Badge>}
+                    <span className="text-xs font-normal text-muted-foreground/50 ml-auto">{a.historicoPagamentos.length} pagamento{a.historicoPagamentos.length !== 1 ? "s" : ""}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border/40">
+                    {a.historicoPagamentos.map(h => (
+                      <div key={h.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/20 transition-colors">
+                        <span className="font-mono tabular-nums text-sm font-medium min-w-[70px]">{String(h.mes).padStart(2, "0")}/{h.ano}</span>
+                        <span className="text-sm font-mono tabular-nums text-muted-foreground">{fmtValorPag(h.valor)}</span>
+                        <span className="text-xs text-muted-foreground/50">{h.tipoPagamento} • {new Date(h.pagoEm).toLocaleDateString("pt-BR")}</span>
+                        <div className="ml-auto">
+                          {h.comprovanteUrl ? (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteFullId(h.id); setComprovanteFullOpen(true); }}>
+                              <FileText className="size-3" /> Comprovante
+                            </Button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground/30">Sem comprovante</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
+
+        {!temConteudo && (
           <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
             <DollarSign className="size-12 mb-4 text-muted-foreground/30" />
             <p>Nenhum aluno com dia de pagamento definido</p>
             <p className="text-xs text-muted-foreground/50 mt-1">Cadastre alunos e defina o dia de pagamento</p>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const RenderPagamentoProfessores = () => {
+    if (pagamentoProfLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <span className="size-6 border-2 border-muted-foreground/30 border-t-primary rounded-full animate-spin mb-4" />
+          <p>Carregando relatório de professores...</p>
+        </div>
+      );
+    }
+
+    if (!pagamentoProfData || !Array.isArray(pagamentoProfData.professores) || pagamentoProfData.professores.length === 0) {
+      return (
+        <div className="flex flex-col items-center justify-center py-20 text-muted-foreground">
+          <GraduationCap className="size-12 mb-4 text-muted-foreground/30" />
+          <p>Nenhum dado de professor no período</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        {pagamentoProfData.professores.map(prof => (
+          <Card key={prof.id} className="shadow-sm border-border/60 overflow-hidden">
+            <div className="h-0.5 bg-gradient-to-r from-violet-200/60 via-violet-400/40 to-violet-200/60" />
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base flex items-center gap-3 text-muted-foreground/80">
+                <GraduationCap className="size-5" />
+                <span className="font-semibold">{prof.nome}</span>
+                <span className="text-sm font-normal text-muted-foreground/50">
+                  {plural(prof.totalAulas, "aula")} · {plural(prof.alunosUnicos, "aluno")} · {prof.totalHoras}h
+                </span>
+                <div className="ml-auto flex items-center gap-2">
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={async () => {
+                    try {
+                      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/relatorio?mes=${pagamentoMes}&ano=${pagamentoAno}`);
+                      if (!res.ok) return;
+                      const html = await res.text();
+                      const blob = new Blob([html], { type: "text/html" });
+                      window.open(URL.createObjectURL(blob), "_blank");
+                    } catch (err) { console.error("Erro ao visualizar relatório:", err); }
+                  }}>
+                    <Eye className="size-3" />
+                    Visualizar
+                  </Button>
+                  <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={async () => {
+                    try {
+                      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/relatorio?mes=${pagamentoMes}&ano=${pagamentoAno}&print=true`);
+                      if (!res.ok) return;
+                      const html = await res.text();
+                      const blob = new Blob([html], { type: "text/html" });
+                      window.open(URL.createObjectURL(blob), "_blank");
+                    } catch (err) { console.error("Erro ao imprimir relatório:", err); }
+                  }}>
+                    <FileText className="size-3" />
+                    Imprimir
+                  </Button>
+                  <span className="text-sm text-muted-foreground/50 ml-1">A receber:</span>
+                  <span className="font-mono text-base font-semibold tabular-nums">{fmtValorPag(prof.valorReceber)}</span>
+                  {prof.pago ? (
+                    <div className="flex items-center gap-1">
+                      <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200 text-[10px] px-2 py-0.5 gap-1">
+                        <CheckCircle2 className="size-3" /> Pago
+                      </Badge>
+                      {prof.pagamentoProf?.comprovanteUrl && (
+                        <Button size="sm" variant="ghost" className="h-6 px-1.5 text-[10px] text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteFullId(prof.pagamentoProf!.id); setComprovanteFullProf(true); setComprovanteFullOpen(true); }}>
+                          <FileText className="size-3" />
+                        </Button>
+                      )}
+                    </div>
+                  ) : (
+                    <Button size="sm" variant="outline" className="h-7 text-xs gap-1 text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => { setPagandoProfessor(prof); setPagamentoProfForm({ valor: String(prof.valorReceber), tipoPagamento: "PIX" }); setPagamentoProfFile(null); setPagamentoProfError(""); setPagamentoProfDialogOpen(true); }}>
+                      <DollarSign className="size-3" /> Pagar
+                    </Button>
+                  )}
+                </div>
+              </CardTitle>
+            </CardHeader>
+          </Card>
+        ))}
+
+        {pagamentoProfData.professores.filter(p => (p.historicoPagamentos?.length ?? 0) > 0).length > 0 && (
+          <div className="space-y-4 pt-4 border-t border-border/40">
+            <div className="flex items-center gap-2 text-muted-foreground/70">
+              <FileText className="size-4" />
+              <span className="text-sm font-semibold uppercase tracking-wider">Histórico de Pagamentos</span>
+              <span className="text-xs text-muted-foreground/50">(todos os comprovantes)</span>
+            </div>
+            {pagamentoProfData.professores.filter(p => (p.historicoPagamentos?.length ?? 0) > 0).map(prof => (
+              <Card key={prof.id} className="shadow-sm border-border/60 overflow-hidden">
+                <div className="h-0.5 bg-gradient-to-r from-blue-200/60 via-blue-400/40 to-blue-200/60" />
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2 text-muted-foreground/80">
+                    <DollarSign className="size-4" />
+                    <span className="font-medium">{prof.nome}</span>
+                    <span className="text-xs font-normal text-muted-foreground/50 ml-auto">{(prof.historicoPagamentos?.length ?? 0)} pagamento{(prof.historicoPagamentos?.length ?? 0) !== 1 ? "s" : ""}</span>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <div className="divide-y divide-border/40">
+                    {(prof.historicoPagamentos ?? []).map(h => (
+                      <div key={h.id} className="px-4 py-2.5 flex items-center gap-3 hover:bg-muted/20 transition-colors">
+                        <span className="font-mono tabular-nums text-sm font-medium min-w-[70px]">{String(h.mes).padStart(2, "0")}/{h.ano}</span>
+                        <span className="text-sm font-mono tabular-nums text-muted-foreground">{fmtValorPag(h.valor)}</span>
+                        <span className="text-xs text-muted-foreground/50">{h.tipoPagamento} • {new Date(h.pagoEm).toLocaleDateString("pt-BR")}</span>
+                        <div className="ml-auto">
+                          {h.comprovanteUrl ? (
+                            <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={() => { setComprovanteFullId(h.id); setComprovanteFullProf(true); setComprovanteFullOpen(true); }}>
+                              <FileText className="size-3" /> Comprovante
+                            </Button>
+                          ) : (
+                            <span className="text-[10px] text-muted-foreground/30">Sem comprovante</span>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </div>
@@ -1507,7 +1946,7 @@ function App() {
           </div>
           <div className="space-y-2">
             <Label>Valor (R$)</Label>
-            <Input type="number" min={0} step={0.01} value={form.valor} onChange={e => handleFormField("valor", e.target.value)} placeholder="Ex: 240" disabled={editMode === 'reagendar'} />
+            <Input type="number" min={0} step={0.01} value={form.valor} onChange={e => { const v = e.target.value.replace(/[^0-9.,]/g, ""); handleFormField("valor", v); }} placeholder="Ex: 240" disabled={editMode === 'reagendar'} />
           </div>
           <div className="space-y-2 col-span-2">
             <Label>Observação</Label>
@@ -1515,15 +1954,15 @@ function App() {
           </div>
           {!editingId && (
             <div className="col-span-2 flex items-center gap-3 pt-1">
-              <Label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  className="size-4 accent-neutral-900"
-                  checked={aulaExperimental}
-                  onChange={e => setAulaExperimental(e.target.checked)}
-                />
-                <span>Aula experimental (1 aula)</span>
-              </Label>
+              <Button
+                type="button"
+                variant={aulaExperimental ? "default" : "outline"}
+                size="sm"
+                className="h-8 text-xs gap-1.5"
+                onClick={() => setAulaExperimental(!aulaExperimental)}
+              >
+                Aula Experimental
+              </Button>
               {!aulaExperimental && (
                 <div className="flex items-center gap-1.5 text-sm">
                   <span>Contrato:</span>
@@ -1600,7 +2039,7 @@ function App() {
           <>
             <div className="space-y-2">
               <Label>Matrícula</Label>
-              <Input value={form.matricula} onChange={e => handleFormField("matricula", e.target.value)} />
+              <Input value={form.matricula} onChange={e => handleFormField("matricula", e.target.value)} required />
             </div>
             <div className="space-y-2">
               <Label>Rede Social</Label>
@@ -1619,6 +2058,7 @@ function App() {
                 </SelectContent>
               </Select>
             </div>
+
           </>
         )}
       </div>
@@ -1823,10 +2263,6 @@ function App() {
     );
   }
 
-  if (location.pathname === "/login") {
-    window.history.replaceState(null, "", "/");
-  }
-
   return (
     <div className="h-screen flex">
       <aside className={`${sidebarCollapsed ? "w-16" : "w-60"} transition-all duration-300 bg-neutral-950 text-white flex flex-col shrink-0 ${sidebarCollapsed ? "overflow-hidden" : ""} relative`}>
@@ -1846,7 +2282,7 @@ function App() {
           <div className="text-[10px] text-white/30 font-semibold uppercase tracking-widest px-2 pb-1.5 pt-1">
             {!sidebarCollapsed && "Navegação"}
           </div>
-          {tabs.filter(t => user?.role !== "PROFESSOR" || (t.value !== "financeiro" && t.value !== "pagamento")).map(t => {
+          {tabs.filter(t => t.roles.includes((user?.role ?? "ALUNO") as "ADMIN" | "PROFESSOR" | "ALUNO")).map(t => {
             const Icon = t.icon;
             const isActive = section === t.value;
             return (
@@ -2046,6 +2482,7 @@ function App() {
         <main className="flex-1 overflow-auto p-6">
             <div className="max-w-7xl mx-auto space-y-6">
               {section === "financeiro" ? renderFinanceiro() :
+               section === "recebimentos" ? renderRecebimentos() :
                section === "pagamento" ? renderPagamento() : (
                 <div className="space-y-6">
                   <div className="flex items-center justify-between">
@@ -2488,12 +2925,15 @@ function App() {
             </div>
           )}
           <DialogFooter>
+            <Button variant="outline" onClick={() => { if (comprovanteViewAluno?.pagamento?.comprovanteUrl) window.open(`${backendUrl}/api/pagamentos/comprovante/${comprovanteViewAluno.pagamento.id}`, "_blank"); }} className="gap-1.5">
+              <FileText className="size-3.5" /> Imprimir
+            </Button>
             <Button variant="outline" onClick={() => { setComprovanteViewOpen(false); setComprovanteViewAluno(null); }}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={comprovanteFullOpen} onOpenChange={v => { setComprovanteFullOpen(v); if (!v) setComprovanteFullId(null); }}>
+      <Dialog open={comprovanteFullOpen} onOpenChange={v => { setComprovanteFullOpen(v); if (!v) { setComprovanteFullId(null); setComprovanteFullProf(false); } }}>
         <DialogContent className="sm:max-w-4xl">
           <DialogHeader>
             <DialogTitle>Comprovante</DialogTitle>
@@ -2501,14 +2941,139 @@ function App() {
           {comprovanteFullId && (
             <div className="border border-border/40 rounded-lg overflow-hidden bg-muted/10">
               <img
-                src={`${backendUrl}/api/pagamentos/comprovante/${comprovanteFullId}`}
+                src={`${backendUrl}/api/${comprovanteFullProf ? "pagamentos-professor" : "pagamentos"}/comprovante/${comprovanteFullId}`}
                 alt="Comprovante"
                 className="w-full object-contain max-h-[80vh]"
               />
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => { setComprovanteFullOpen(false); setComprovanteFullId(null); }}>Fechar</Button>
+            <Button variant="outline" onClick={() => { if (comprovanteFullId) window.open(`${backendUrl}/api/${comprovanteFullProf ? "pagamentos-professor" : "pagamentos"}/comprovante/${comprovanteFullId}`, "_blank"); }} className="gap-1.5">
+              <FileText className="size-3.5" /> Imprimir
+            </Button>
+            <Button variant="outline" onClick={() => { setComprovanteFullOpen(false); setComprovanteFullId(null); setComprovanteFullProf(false); }}>Fechar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={pagamentoProfDialogOpen} onOpenChange={v => { setPagamentoProfDialogOpen(v); if (!v) { setPagandoProfessor(null); setPagamentoProfFile(null); } }}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <div className="flex items-center gap-3">
+              <div className="size-9 rounded-lg bg-violet-100 flex items-center justify-center">
+                <DollarSign className="size-4.5 text-violet-600" />
+              </div>
+              <div>
+                <DialogTitle>Pagar Professor</DialogTitle>
+                <DialogDescription>
+                  {pagandoProfessor ? pagandoProfessor.nome : ""}
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            <div className="space-y-1.5">
+              <Label>Valor (R$)</Label>
+              <Input type="number" step="0.01" min="0" value={pagamentoProfForm.valor} onChange={e => setPagamentoProfForm(p => ({ ...p, valor: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Tipo de Pagamento</Label>
+              <Select value={pagamentoProfForm.tipoPagamento} onValueChange={v => setPagamentoProfForm(p => ({ ...p, tipoPagamento: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="PIX">PIX</SelectItem>
+                  <SelectItem value="Dinheiro">Dinheiro</SelectItem>
+                  <SelectItem value="Cartão de Crédito">Cartão de Crédito</SelectItem>
+                  <SelectItem value="Cartão de Débito">Cartão de Débito</SelectItem>
+                  <SelectItem value="Transferência">Transferência</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Comprovante</Label>
+              {!pagamentoProfFile ? (
+                <label className="flex flex-col items-center justify-center border-2 border-dashed border-border/60 rounded-lg p-5 cursor-pointer hover:border-primary/40 hover:bg-muted/20 transition-all">
+                  <FileText className="size-5 text-muted-foreground/50 mb-1" />
+                  <span className="text-sm text-muted-foreground font-medium">Clique para selecionar</span>
+                  <input type="file" accept="image/*" className="hidden" onChange={e => setPagamentoProfFile(e.target.files?.[0] ?? null)} />
+                </label>
+              ) : (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground bg-muted/20 rounded-lg px-3 py-2 border border-border/40">
+                  <FileText className="size-4" />
+                  <span className="flex-1 truncate">{pagamentoProfFile.name}</span>
+                  <Button size="sm" variant="ghost" className="size-6 p-0 text-muted-foreground hover:text-destructive" onClick={() => setPagamentoProfFile(null)}>
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+          {pagamentoProfError && (
+            <div className="px-6">
+              <div className="flex items-center gap-2 text-sm text-red-600 bg-red-50 rounded-lg px-4 py-2.5">
+                <AlertCircle className="size-4 shrink-0" />
+                <span>{pagamentoProfError}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => { setPagamentoProfDialogOpen(false); setPagandoProfessor(null); setPagamentoProfFile(null); setPagamentoProfError(""); }}>Cancelar</Button>
+            <Button onClick={confirmarPagamentoProfessor} className="bg-emerald-600 hover:bg-emerald-700 shadow-xs gap-1.5">
+              <CheckCircle2 className="size-4" />
+              Confirmar Pagamento
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={relatorioGeralOpen} onOpenChange={setRelatorioGeralOpen}>
+        <DialogContent className="sm:max-w-3xl max-h-[80vh] flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Relatório Geral - {mesAno}/${ano}</DialogTitle>
+            <DialogDescription>
+              Resumo de pagamentos dos professores para o mês de referência.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Professor</TableHead>
+                  <TableHead className="text-right">Valor a Receber</TableHead>
+                  <TableHead className="text-right">Alunos Atendidos</TableHead>
+                  <TableHead className="text-right">Horas de Aula</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {pagamentoProfData?.professores?.length ? (
+                  pagamentoProfData.professores
+                    .sort((a, b) => a.nome.localeCompare(b.nome))
+                    .map((prof, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{prof.nome}</TableCell>
+                        <TableCell className="text-right">{fmtValor(prof.valorReceber)}</TableCell>
+                        <TableCell className="text-right">{prof.alunosUnicos}</TableCell>
+                        <TableCell className="text-right">{prof.totalHoras}h</TableCell>
+                      </TableRow>
+                    ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                      Nenhum dado disponível para este mês.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+            {pagamentoProfData?.professores?.length ? (
+              <div className="border-t px-6 py-4 flex justify-between text-sm font-medium">
+                <span>Total</span>
+                <span>{fmtValor(pagamentoProfData.professores.reduce((s, p) => s + p.valorReceber, 0))}</span>
+              </div>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRelatorioGeralOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

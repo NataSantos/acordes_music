@@ -43,6 +43,11 @@ export type Aluno = Prisma.AlunoModel
  */
 export type Pagamento = Prisma.PagamentoModel
 /**
+ * Model PagamentoProfessor
+ * 
+ */
+export type PagamentoProfessor = Prisma.PagamentoProfessorModel
+/**
  * Model Agendamento
  * 
  */

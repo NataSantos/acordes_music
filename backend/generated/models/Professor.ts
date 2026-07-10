@@ -192,6 +192,7 @@ export type ProfessorWhereInput = {
   profissao?: Prisma.StringNullableFilter<"Professor"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
   agendamentos?: Prisma.AgendamentoListRelationFilter
+  pagamentosProfessor?: Prisma.PagamentoProfessorListRelationFilter
 }
 
 export type ProfessorOrderByWithRelationInput = {
@@ -203,6 +204,7 @@ export type ProfessorOrderByWithRelationInput = {
   profissao?: Prisma.SortOrderInput | Prisma.SortOrder
   usuario?: Prisma.UsuarioOrderByWithRelationInput
   agendamentos?: Prisma.AgendamentoOrderByRelationAggregateInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorOrderByRelationAggregateInput
 }
 
 export type ProfessorWhereUniqueInput = Prisma.AtLeast<{
@@ -217,6 +219,7 @@ export type ProfessorWhereUniqueInput = Prisma.AtLeast<{
   profissao?: Prisma.StringNullableFilter<"Professor"> | string | null
   usuario?: Prisma.XOR<Prisma.UsuarioScalarRelationFilter, Prisma.UsuarioWhereInput>
   agendamentos?: Prisma.AgendamentoListRelationFilter
+  pagamentosProfessor?: Prisma.PagamentoProfessorListRelationFilter
 }, "id" | "usuarioId">
 
 export type ProfessorOrderByWithAggregationInput = {
@@ -251,6 +254,7 @@ export type ProfessorCreateInput = {
   profissao?: string | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutProfessorInput
   agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutProfessorInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUncheckedCreateInput = {
@@ -261,6 +265,7 @@ export type ProfessorUncheckedCreateInput = {
   endereco?: string | null
   profissao?: string | null
   agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutProfessorInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUncheckedCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUpdateInput = {
@@ -271,6 +276,7 @@ export type ProfessorUpdateInput = {
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutProfessorNestedInput
   agendamentos?: Prisma.AgendamentoUpdateManyWithoutProfessorNestedInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorUncheckedUpdateInput = {
@@ -281,6 +287,7 @@ export type ProfessorUncheckedUpdateInput = {
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutProfessorNestedInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUncheckedUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorCreateManyInput = {
@@ -382,6 +389,20 @@ export type DateTimeFieldUpdateOperationsInput = {
   set?: Date | string
 }
 
+export type ProfessorCreateNestedOneWithoutPagamentosProfessorInput = {
+  create?: Prisma.XOR<Prisma.ProfessorCreateWithoutPagamentosProfessorInput, Prisma.ProfessorUncheckedCreateWithoutPagamentosProfessorInput>
+  connectOrCreate?: Prisma.ProfessorCreateOrConnectWithoutPagamentosProfessorInput
+  connect?: Prisma.ProfessorWhereUniqueInput
+}
+
+export type ProfessorUpdateOneRequiredWithoutPagamentosProfessorNestedInput = {
+  create?: Prisma.XOR<Prisma.ProfessorCreateWithoutPagamentosProfessorInput, Prisma.ProfessorUncheckedCreateWithoutPagamentosProfessorInput>
+  connectOrCreate?: Prisma.ProfessorCreateOrConnectWithoutPagamentosProfessorInput
+  upsert?: Prisma.ProfessorUpsertWithoutPagamentosProfessorInput
+  connect?: Prisma.ProfessorWhereUniqueInput
+  update?: Prisma.XOR<Prisma.XOR<Prisma.ProfessorUpdateToOneWithWhereWithoutPagamentosProfessorInput, Prisma.ProfessorUpdateWithoutPagamentosProfessorInput>, Prisma.ProfessorUncheckedUpdateWithoutPagamentosProfessorInput>
+}
+
 export type ProfessorCreateNestedOneWithoutAgendamentosInput = {
   create?: Prisma.XOR<Prisma.ProfessorCreateWithoutAgendamentosInput, Prisma.ProfessorUncheckedCreateWithoutAgendamentosInput>
   connectOrCreate?: Prisma.ProfessorCreateOrConnectWithoutAgendamentosInput
@@ -403,6 +424,7 @@ export type ProfessorCreateWithoutUsuarioInput = {
   endereco?: string | null
   profissao?: string | null
   agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutProfessorInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUncheckedCreateWithoutUsuarioInput = {
@@ -412,6 +434,7 @@ export type ProfessorUncheckedCreateWithoutUsuarioInput = {
   endereco?: string | null
   profissao?: string | null
   agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutProfessorInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUncheckedCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorCreateOrConnectWithoutUsuarioInput = {
@@ -437,10 +460,68 @@ export type ProfessorUpdateWithoutUsuarioInput = {
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agendamentos?: Prisma.AgendamentoUpdateManyWithoutProfessorNestedInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorUncheckedUpdateWithoutUsuarioInput = {
   id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  agendamentos?: Prisma.AgendamentoUncheckedUpdateManyWithoutProfessorNestedInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUncheckedUpdateManyWithoutProfessorNestedInput
+}
+
+export type ProfessorCreateWithoutPagamentosProfessorInput = {
+  id?: string
+  createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
+  usuario: Prisma.UsuarioCreateNestedOneWithoutProfessorInput
+  agendamentos?: Prisma.AgendamentoCreateNestedManyWithoutProfessorInput
+}
+
+export type ProfessorUncheckedCreateWithoutPagamentosProfessorInput = {
+  id?: string
+  usuarioId: string
+  createdAt?: Date | string
+  civil?: string | null
+  endereco?: string | null
+  profissao?: string | null
+  agendamentos?: Prisma.AgendamentoUncheckedCreateNestedManyWithoutProfessorInput
+}
+
+export type ProfessorCreateOrConnectWithoutPagamentosProfessorInput = {
+  where: Prisma.ProfessorWhereUniqueInput
+  create: Prisma.XOR<Prisma.ProfessorCreateWithoutPagamentosProfessorInput, Prisma.ProfessorUncheckedCreateWithoutPagamentosProfessorInput>
+}
+
+export type ProfessorUpsertWithoutPagamentosProfessorInput = {
+  update: Prisma.XOR<Prisma.ProfessorUpdateWithoutPagamentosProfessorInput, Prisma.ProfessorUncheckedUpdateWithoutPagamentosProfessorInput>
+  create: Prisma.XOR<Prisma.ProfessorCreateWithoutPagamentosProfessorInput, Prisma.ProfessorUncheckedCreateWithoutPagamentosProfessorInput>
+  where?: Prisma.ProfessorWhereInput
+}
+
+export type ProfessorUpdateToOneWithWhereWithoutPagamentosProfessorInput = {
+  where?: Prisma.ProfessorWhereInput
+  data: Prisma.XOR<Prisma.ProfessorUpdateWithoutPagamentosProfessorInput, Prisma.ProfessorUncheckedUpdateWithoutPagamentosProfessorInput>
+}
+
+export type ProfessorUpdateWithoutPagamentosProfessorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
+  civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  usuario?: Prisma.UsuarioUpdateOneRequiredWithoutProfessorNestedInput
+  agendamentos?: Prisma.AgendamentoUpdateManyWithoutProfessorNestedInput
+}
+
+export type ProfessorUncheckedUpdateWithoutPagamentosProfessorInput = {
+  id?: Prisma.StringFieldUpdateOperationsInput | string
+  usuarioId?: Prisma.StringFieldUpdateOperationsInput | string
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
@@ -455,6 +536,7 @@ export type ProfessorCreateWithoutAgendamentosInput = {
   endereco?: string | null
   profissao?: string | null
   usuario: Prisma.UsuarioCreateNestedOneWithoutProfessorInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorUncheckedCreateWithoutAgendamentosInput = {
@@ -464,6 +546,7 @@ export type ProfessorUncheckedCreateWithoutAgendamentosInput = {
   civil?: string | null
   endereco?: string | null
   profissao?: string | null
+  pagamentosProfessor?: Prisma.PagamentoProfessorUncheckedCreateNestedManyWithoutProfessorInput
 }
 
 export type ProfessorCreateOrConnectWithoutAgendamentosInput = {
@@ -489,6 +572,7 @@ export type ProfessorUpdateWithoutAgendamentosInput = {
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   usuario?: Prisma.UsuarioUpdateOneRequiredWithoutProfessorNestedInput
+  pagamentosProfessor?: Prisma.PagamentoProfessorUpdateManyWithoutProfessorNestedInput
 }
 
 export type ProfessorUncheckedUpdateWithoutAgendamentosInput = {
@@ -498,6 +582,7 @@ export type ProfessorUncheckedUpdateWithoutAgendamentosInput = {
   civil?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   endereco?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   profissao?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  pagamentosProfessor?: Prisma.PagamentoProfessorUncheckedUpdateManyWithoutProfessorNestedInput
 }
 
 
@@ -507,10 +592,12 @@ export type ProfessorUncheckedUpdateWithoutAgendamentosInput = {
 
 export type ProfessorCountOutputType = {
   agendamentos: number
+  pagamentosProfessor: number
 }
 
 export type ProfessorCountOutputTypeSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   agendamentos?: boolean | ProfessorCountOutputTypeCountAgendamentosArgs
+  pagamentosProfessor?: boolean | ProfessorCountOutputTypeCountPagamentosProfessorArgs
 }
 
 /**
@@ -530,6 +617,13 @@ export type ProfessorCountOutputTypeCountAgendamentosArgs<ExtArgs extends runtim
   where?: Prisma.AgendamentoWhereInput
 }
 
+/**
+ * ProfessorCountOutputType without action
+ */
+export type ProfessorCountOutputTypeCountPagamentosProfessorArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  where?: Prisma.PagamentoProfessorWhereInput
+}
+
 
 export type ProfessorSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetSelect<{
   id?: boolean
@@ -540,6 +634,7 @@ export type ProfessorSelect<ExtArgs extends runtime.Types.Extensions.InternalArg
   profissao?: boolean
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
   agendamentos?: boolean | Prisma.Professor$agendamentosArgs<ExtArgs>
+  pagamentosProfessor?: boolean | Prisma.Professor$pagamentosProfessorArgs<ExtArgs>
   _count?: boolean | Prisma.ProfessorCountOutputTypeDefaultArgs<ExtArgs>
 }, ExtArgs["result"]["professor"]>
 
@@ -576,6 +671,7 @@ export type ProfessorOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs 
 export type ProfessorInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   usuario?: boolean | Prisma.UsuarioDefaultArgs<ExtArgs>
   agendamentos?: boolean | Prisma.Professor$agendamentosArgs<ExtArgs>
+  pagamentosProfessor?: boolean | Prisma.Professor$pagamentosProfessorArgs<ExtArgs>
   _count?: boolean | Prisma.ProfessorCountOutputTypeDefaultArgs<ExtArgs>
 }
 export type ProfessorIncludeCreateManyAndReturn<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
@@ -590,6 +686,7 @@ export type $ProfessorPayload<ExtArgs extends runtime.Types.Extensions.InternalA
   objects: {
     usuario: Prisma.$UsuarioPayload<ExtArgs>
     agendamentos: Prisma.$AgendamentoPayload<ExtArgs>[]
+    pagamentosProfessor: Prisma.$PagamentoProfessorPayload<ExtArgs>[]
   }
   scalars: runtime.Types.Extensions.GetPayloadResult<{
     id: string
@@ -994,6 +1091,7 @@ export interface Prisma__ProfessorClient<T, Null = never, ExtArgs extends runtim
   readonly [Symbol.toStringTag]: "PrismaPromise"
   usuario<T extends Prisma.UsuarioDefaultArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.UsuarioDefaultArgs<ExtArgs>>): Prisma.Prisma__UsuarioClient<runtime.Types.Result.GetResult<Prisma.$UsuarioPayload<ExtArgs>, T, "findUniqueOrThrow", GlobalOmitOptions> | Null, Null, ExtArgs, GlobalOmitOptions>
   agendamentos<T extends Prisma.Professor$agendamentosArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Professor$agendamentosArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$AgendamentoPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
+  pagamentosProfessor<T extends Prisma.Professor$pagamentosProfessorArgs<ExtArgs> = {}>(args?: Prisma.Subset<T, Prisma.Professor$pagamentosProfessorArgs<ExtArgs>>): Prisma.PrismaPromise<runtime.Types.Result.GetResult<Prisma.$PagamentoProfessorPayload<ExtArgs>, T, "findMany", GlobalOmitOptions> | Null>
   /**
    * Attaches callbacks for the resolution and/or rejection of the Promise.
    * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -1449,6 +1547,30 @@ export type Professor$agendamentosArgs<ExtArgs extends runtime.Types.Extensions.
   take?: number
   skip?: number
   distinct?: Prisma.AgendamentoScalarFieldEnum | Prisma.AgendamentoScalarFieldEnum[]
+}
+
+/**
+ * Professor.pagamentosProfessor
+ */
+export type Professor$pagamentosProfessorArgs<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
+  /**
+   * Select specific fields to fetch from the PagamentoProfessor
+   */
+  select?: Prisma.PagamentoProfessorSelect<ExtArgs> | null
+  /**
+   * Omit specific fields from the PagamentoProfessor
+   */
+  omit?: Prisma.PagamentoProfessorOmit<ExtArgs> | null
+  /**
+   * Choose, which related nodes to fetch as well
+   */
+  include?: Prisma.PagamentoProfessorInclude<ExtArgs> | null
+  where?: Prisma.PagamentoProfessorWhereInput
+  orderBy?: Prisma.PagamentoProfessorOrderByWithRelationInput | Prisma.PagamentoProfessorOrderByWithRelationInput[]
+  cursor?: Prisma.PagamentoProfessorWhereUniqueInput
+  take?: number
+  skip?: number
+  distinct?: Prisma.PagamentoProfessorScalarFieldEnum | Prisma.PagamentoProfessorScalarFieldEnum[]
 }
 
 /**

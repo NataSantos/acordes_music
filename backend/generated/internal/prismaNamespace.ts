@@ -389,6 +389,7 @@ export const ModelName = {
   Professor: 'Professor',
   Aluno: 'Aluno',
   Pagamento: 'Pagamento',
+  PagamentoProfessor: 'PagamentoProfessor',
   Agendamento: 'Agendamento'
 } as const
 
@@ -405,7 +406,7 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
     omit: GlobalOmitOptions
   }
   meta: {
-    modelProps: "sala" | "usuario" | "professor" | "aluno" | "pagamento" | "agendamento"
+    modelProps: "sala" | "usuario" | "professor" | "aluno" | "pagamento" | "pagamentoProfessor" | "agendamento"
     txIsolationLevel: TransactionIsolationLevel
   }
   model: {
@@ -779,6 +780,80 @@ export type TypeMap<ExtArgs extends runtime.Types.Extensions.InternalArgs = runt
         }
       }
     }
+    PagamentoProfessor: {
+      payload: Prisma.$PagamentoProfessorPayload<ExtArgs>
+      fields: Prisma.PagamentoProfessorFieldRefs
+      operations: {
+        findUnique: {
+          args: Prisma.PagamentoProfessorFindUniqueArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload> | null
+        }
+        findUniqueOrThrow: {
+          args: Prisma.PagamentoProfessorFindUniqueOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>
+        }
+        findFirst: {
+          args: Prisma.PagamentoProfessorFindFirstArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload> | null
+        }
+        findFirstOrThrow: {
+          args: Prisma.PagamentoProfessorFindFirstOrThrowArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>
+        }
+        findMany: {
+          args: Prisma.PagamentoProfessorFindManyArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>[]
+        }
+        create: {
+          args: Prisma.PagamentoProfessorCreateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>
+        }
+        createMany: {
+          args: Prisma.PagamentoProfessorCreateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        createManyAndReturn: {
+          args: Prisma.PagamentoProfessorCreateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>[]
+        }
+        delete: {
+          args: Prisma.PagamentoProfessorDeleteArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>
+        }
+        update: {
+          args: Prisma.PagamentoProfessorUpdateArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>
+        }
+        deleteMany: {
+          args: Prisma.PagamentoProfessorDeleteManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateMany: {
+          args: Prisma.PagamentoProfessorUpdateManyArgs<ExtArgs>
+          result: BatchPayload
+        }
+        updateManyAndReturn: {
+          args: Prisma.PagamentoProfessorUpdateManyAndReturnArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>[]
+        }
+        upsert: {
+          args: Prisma.PagamentoProfessorUpsertArgs<ExtArgs>
+          result: runtime.Types.Utils.PayloadToResult<Prisma.$PagamentoProfessorPayload>
+        }
+        aggregate: {
+          args: Prisma.PagamentoProfessorAggregateArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.AggregatePagamentoProfessor>
+        }
+        groupBy: {
+          args: Prisma.PagamentoProfessorGroupByArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PagamentoProfessorGroupByOutputType>[]
+        }
+        count: {
+          args: Prisma.PagamentoProfessorCountArgs<ExtArgs>
+          result: runtime.Types.Utils.Optional<Prisma.PagamentoProfessorCountAggregateOutputType> | number
+        }
+      }
+    }
     Agendamento: {
       payload: Prisma.$AgendamentoPayload<ExtArgs>
       fields: Prisma.AgendamentoFieldRefs
@@ -932,7 +1007,9 @@ export const AlunoScalarFieldEnum = {
   createdAt: 'createdAt',
   matricula: 'matricula',
   redeSocial: 'redeSocial',
-  diaPagamento: 'diaPagamento'
+  diaPagamento: 'diaPagamento',
+  dataInicioContrato: 'dataInicioContrato',
+  dataFimContrato: 'dataFimContrato'
 } as const
 
 export type AlunoScalarFieldEnum = (typeof AlunoScalarFieldEnum)[keyof typeof AlunoScalarFieldEnum]
@@ -951,6 +1028,21 @@ export const PagamentoScalarFieldEnum = {
 } as const
 
 export type PagamentoScalarFieldEnum = (typeof PagamentoScalarFieldEnum)[keyof typeof PagamentoScalarFieldEnum]
+
+
+export const PagamentoProfessorScalarFieldEnum = {
+  id: 'id',
+  professorId: 'professorId',
+  mes: 'mes',
+  ano: 'ano',
+  valor: 'valor',
+  pago: 'pago',
+  pagoEm: 'pagoEm',
+  tipoPagamento: 'tipoPagamento',
+  comprovanteUrl: 'comprovanteUrl'
+} as const
+
+export type PagamentoProfessorScalarFieldEnum = (typeof PagamentoProfessorScalarFieldEnum)[keyof typeof PagamentoProfessorScalarFieldEnum]
 
 
 export const AgendamentoScalarFieldEnum = {
@@ -1141,6 +1233,7 @@ export type GlobalOmitConfig = {
   professor?: Prisma.ProfessorOmit
   aluno?: Prisma.AlunoOmit
   pagamento?: Prisma.PagamentoOmit
+  pagamentoProfessor?: Prisma.PagamentoProfessorOmit
   agendamento?: Prisma.AgendamentoOmit
 }
 

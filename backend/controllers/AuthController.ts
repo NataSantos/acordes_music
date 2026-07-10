@@ -119,8 +119,8 @@ export default function AuthController(prisma: PrismaClient) {
       if (!email || !codigo || !senhaNova) {
         return res.status(400).json({ error: "Email, código e nova senha são obrigatórios" });
       }
-      if (senhaNova.length < 4) {
-        return res.status(400).json({ error: "A nova senha deve ter no mínimo 4 caracteres" });
+      if (senhaNova.length < 6) {
+        return res.status(400).json({ error: "A nova senha deve ter no mínimo 6 caracteres" });
       }
 
       const usuario = await prisma.usuario.findUnique({ where: { email } });
@@ -161,8 +161,8 @@ export default function AuthController(prisma: PrismaClient) {
       if (!senhaAtual || !senhaNova) {
         return res.status(400).json({ error: "Senha atual e nova são obrigatórias" });
       }
-      if (senhaNova.length < 4) {
-        return res.status(400).json({ error: "A nova senha deve ter no mínimo 4 caracteres" });
+      if (senhaNova.length < 6) {
+        return res.status(400).json({ error: "A nova senha deve ter no mínimo 6 caracteres" });
       }
 
       const usuario = await prisma.usuario.findUnique({ where: { id: req.user!.usuarioId } });

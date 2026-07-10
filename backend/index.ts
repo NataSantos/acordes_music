@@ -11,6 +11,7 @@ import AgendamentoController from "./controllers/AgendamentoController.js";
 import AuthController from "./controllers/AuthController.js";
 import GanhosController from "./controllers/GanhosController.js";
 import PagamentoController from "./controllers/PagamentoController.js";
+import PagamentoProfessorController from "./controllers/PagamentoProfessorController.js";
 import UploadController from "./controllers/UploadController.js";
 
 const app = express();
@@ -36,6 +37,7 @@ app.use("/api/agendamentos", AgendamentoController(prisma));
 app.use("/api/auth", AuthController(prisma));
 app.use("/api/ganhos", GanhosController(prisma));
 app.use("/api/pagamentos", PagamentoController(prisma));
+app.use("/api/pagamentos-professor", PagamentoProfessorController(prisma));
 app.use("/api/upload", UploadController(prisma));
 
 async function main() {

@@ -76,7 +76,7 @@ export default function UploadController(prisma: PrismaClient) {
       }
 
       const usuario = await prisma.usuario.findUnique({
-        where: { id: req.params.usuarioId },
+        where: { id: req.params.usuarioId as string },
         select: { foto: true },
       });
 

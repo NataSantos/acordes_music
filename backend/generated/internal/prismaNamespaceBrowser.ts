@@ -56,6 +56,7 @@ export const ModelName = {
   Professor: 'Professor',
   Aluno: 'Aluno',
   Pagamento: 'Pagamento',
+  PagamentoProfessor: 'PagamentoProfessor',
   Agendamento: 'Agendamento'
 } as const
 
@@ -115,7 +116,9 @@ export const AlunoScalarFieldEnum = {
   createdAt: 'createdAt',
   matricula: 'matricula',
   redeSocial: 'redeSocial',
-  diaPagamento: 'diaPagamento'
+  diaPagamento: 'diaPagamento',
+  dataInicioContrato: 'dataInicioContrato',
+  dataFimContrato: 'dataFimContrato'
 } as const
 
 export type AlunoScalarFieldEnum = (typeof AlunoScalarFieldEnum)[keyof typeof AlunoScalarFieldEnum]
@@ -134,6 +137,21 @@ export const PagamentoScalarFieldEnum = {
 } as const
 
 export type PagamentoScalarFieldEnum = (typeof PagamentoScalarFieldEnum)[keyof typeof PagamentoScalarFieldEnum]
+
+
+export const PagamentoProfessorScalarFieldEnum = {
+  id: 'id',
+  professorId: 'professorId',
+  mes: 'mes',
+  ano: 'ano',
+  valor: 'valor',
+  pago: 'pago',
+  pagoEm: 'pagoEm',
+  tipoPagamento: 'tipoPagamento',
+  comprovanteUrl: 'comprovanteUrl'
+} as const
+
+export type PagamentoProfessorScalarFieldEnum = (typeof PagamentoProfessorScalarFieldEnum)[keyof typeof PagamentoProfessorScalarFieldEnum]
 
 
 export const AgendamentoScalarFieldEnum = {
