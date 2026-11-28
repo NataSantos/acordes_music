@@ -1,6 +1,6 @@
 import { Router } from "express";
 import type { Request, Response } from "express";
-import type { PrismaClient } from "../generated/client.js";
+import { Prisma, type PrismaClient } from "../generated/client.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireAdmin, requireAdminOrProfessor } from "../middleware/roles.js";
 import { agendamentoSchema, extrairPrimeiroErro } from "../utils/validation.js";
@@ -196,7 +196,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
           data: new Date(data.data),
           horario: data.horario,
           duracao: data.duracao,
-          valor: data.valor !== undefined && data.valor !== null && data.valor !== '' ? Number(data.valor) : null,
+          valor: data.valor !== undefined && data.valor !== null ? Number(data.valor) : null,
           observacao: data.observacao ?? null,
         },
         include,
@@ -243,7 +243,7 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
           ...(data.data !== undefined && { data: new Date(data.data) }),
           ...(data.horario !== undefined && { horario: data.horario }),
           ...(data.duracao !== undefined && { duracao: data.duracao }),
-          ...(data.valor !== undefined && { valor: data.valor !== null && data.valor !== '' ? Number(data.valor) : null }),
+          ...(data.valor !== undefined && { valor: data.valor !== null ? Number(data.valor) : null }),
           ...(data.observacao !== undefined && { observacao: data.observacao }),
         } as any,
         include,
@@ -265,7 +265,10 @@ export default function AgendamentoController(prisma: PrismaClient): Router {
       return res.status(204).send();
     } catch (error) {
       console.error("Erro ao remover agendamento:", error);
-      return res.status(404).json(notFound());
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return res.status(404).json(notFound());
+      }
+      return res.status(500).json({ error: "Erro ao excluir agendamento" });
     }
   });
 

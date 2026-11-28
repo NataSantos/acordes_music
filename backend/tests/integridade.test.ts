@@ -710,3 +710,108 @@ describe("11. Validação de Campos — Tipos, Formatos e Opcionais", () => {
     expect(r.status).toBe(201);
   });
 });
+
+describe("12. Exclusão de registros com vínculos", () => {
+  let adminToken: string | null;
+  const unique = () => String(Date.now() + Math.floor(Math.random() * 100000));
+
+  beforeAll(async () => {
+    adminToken = await login("natasantos@sou.faccat.br", "natas00712");
+  });
+
+  async function authForm(url: string, token: string, fields: Record<string, string>) {
+    const formData = new FormData();
+    for (const [key, value] of Object.entries(fields)) formData.append(key, value);
+    const res = await fetch(`${BASE}${url}`, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}` },
+      body: formData,
+    });
+    let data: unknown;
+    try {
+      data = await res.json();
+    } catch {
+      data = null;
+    }
+    return { status: res.status, data };
+  }
+
+  it("Exclui aluno que possui pagamento vinculado", async () => {
+    if (!adminToken) return;
+    const suf = unique();
+    const criacao = await authJson("POST", "/api/alunos", adminToken, {
+      cpf: `100${suf}`.slice(0, 11).padEnd(11, "0"),
+      nome: "AlunoExclusao",
+      telefone: "51999999999",
+      email: `aluno-exclusao-${suf}@test.com`,
+      matricula: `MAT${suf}`,
+      diaPagamento: "10",
+    });
+    expect(criacao.status).toBe(201);
+    const alunoId = (criacao.data as { id: string }).id;
+
+    const pagamento = await authForm("/api/pagamentos/pagar", adminToken, {
+      alunoId,
+      mes: "11",
+      ano: "2026",
+      valor: "150",
+      tipoPagamento: "PIX",
+    });
+    expect([200, 201]).toContain(pagamento.status);
+
+    const exclusao = await fetch(`${BASE}/api/alunos/${alunoId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(exclusao.status).toBe(204);
+
+    const lista = await authJson("GET", "/api/alunos", adminToken);
+    const alunos = lista.data as { id: string }[];
+    expect(alunos.some(a => a.id === alunoId)).toBe(false);
+  });
+
+  it("Exclui professor que possui pagamento vinculado", async () => {
+    if (!adminToken) return;
+    const suf = unique();
+    const criacao = await authJson("POST", "/api/professores", adminToken, {
+      cpf: `200${suf}`.slice(0, 11).padEnd(11, "0"),
+      nome: "ProfExclusao",
+      telefone: "51999999999",
+      email: `prof-exclusao-${suf}@test.com`,
+    });
+    expect(criacao.status).toBe(201);
+    const professorId = (criacao.data as { id: string }).id;
+
+    const pagamento = await authForm("/api/pagamentos-professor/pagar", adminToken, {
+      professorId,
+      mes: "11",
+      ano: "2026",
+      valor: "300",
+      tipoPagamento: "PIX",
+    });
+    expect([200, 201]).toContain(pagamento.status);
+
+    const exclusao = await fetch(`${BASE}/api/professores/${professorId}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${adminToken}` },
+    });
+    expect(exclusao.status).toBe(204);
+
+    const lista = await authJson("GET", "/api/professores", adminToken);
+    const professores = lista.data as { id: string }[];
+    expect(professores.some(p => p.id === professorId)).toBe(false);
+  });
+
+  it("Excluir id inexistente retorna 404 com mensagem de não encontrado", async () => {
+    if (!adminToken) return;
+    for (const rota of ["alunos", "professores", "salas", "agendamentos"]) {
+      const exclusao = await fetch(`${BASE}/api/${rota}/id-inexistente`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${adminToken}` },
+      });
+      expect(exclusao.status).toBe(404);
+      const data = await exclusao.json() as { error: string };
+      expect(data.error).toContain("não encontrado");
+    }
+  });
+});

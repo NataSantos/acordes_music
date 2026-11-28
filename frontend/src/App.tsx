@@ -162,6 +162,7 @@ const backendUrl = import.meta.env.VITE_API_URL ?? `http://${location.hostname}:
 
 const plural = (n: number, s: string) => `${n} ${s}${n !== 1 ? "s" : ""}`;
 const fmtValorPag = (v?: number | null) => v != null ? `R$ ${v.toFixed(2)}` : "—";
+const fmtValor = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
 function createCroppedBlob(
   imageSrc: string,
@@ -238,6 +239,8 @@ function App() {
   const [editMode, setEditMode] = useState<'reagendar' | 'editar' | null>(null);
   const [filterStatus, setFilterStatus] = useState<string>("");
   const [filterSala, setFilterSala] = useState<string>("");
+  const [agendamentoMes, setAgendamentoMes] = useState(() => new Date().getMonth() + 1);
+  const [agendamentoAno, setAgendamentoAno] = useState(() => new Date().getFullYear());
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -246,6 +249,7 @@ function App() {
   const [form, setForm] = useState({
     nome: "", descricao: "", capacidade: "",
     cpf: "", email: "", telefone: "", profissao: "", matricula: "",
+    redeSocial: "", diaPagamento: "", dataInicioContrato: "", dataFimContrato: "",
     professorId: "", alunoId: "", salaId: "",
     data: "", horario: "", duracao: "60", valor: "240", observacao: "",
   });
@@ -315,6 +319,36 @@ function App() {
   const [pagamentoProfFile, setPagamentoProfFile] = useState<File | null>(null);
   const [pagamentoProfError, setPagamentoProfError] = useState("");
   const [relatorioGeralOpen, setRelatorioGeralOpen] = useState(false);
+  const relatorioPrintRef = useRef<HTMLDivElement>(null);
+
+  const handlePrintRelatorio = () => {
+    const content = relatorioPrintRef.current;
+    if (!content) return;
+    const html = `
+      <html>
+        <head><title>Relatório Geral</title>
+        <style>
+          body { font-family: system-ui, sans-serif; padding: 24px; color: #111; }
+          h1 { font-size: 18px; margin: 0 0 2px; }
+          .desc { color: #666; font-size: 14px; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; font-size: 14px; }
+          th { text-align: left; padding: 8px 12px; border-bottom: 2px solid #333; font-weight: 600; }
+          td { padding: 8px 12px; border-bottom: 1px solid #ddd; }
+          .text-right { text-align: right; }
+          .total { border-top: 2px solid #333; margin-top: 8px; padding-top: 12px; display: flex; justify-content: space-between; font-weight: 700; font-size: 14px; }
+          .font-medium { font-weight: 500; }
+        </style>
+      </head>
+      <body>
+        <h1>Relatório Geral - ${pagamentoMes}/${pagamentoAno}</h1>
+        <p class="desc">Resumo de pagamentos dos professores para o mês de referência.</p>
+        ${content.querySelector('table')?.outerHTML ?? ''}
+        ${content.querySelector('.total')?.outerHTML ?? ''}
+      </body></html>
+    `;
+    const w = window.open('', '_blank');
+    if (w) { w.document.write(html); w.document.close(); w.focus(); setTimeout(() => w.print(), 300); }
+  };
 
   const carregarGanhos = async () => {
     if (!user) return;
@@ -393,8 +427,8 @@ function App() {
   };
 
   useEffect(() => {
-    location.hash = section;
-  }, [section]);
+    if (user) location.hash = section;
+  }, [section, user]);
 
   useEffect(() => {
     const onHashChange = () => {
@@ -973,7 +1007,10 @@ function App() {
 
   const renderTable = () => {
     if (section === "agendamentos") {
-      const items = agendamentosFiltrados;
+      const items = agendamentosFiltrados.filter(a => {
+        const [ano, mes] = a.data.slice(0, 7).split("-");
+        return Number(ano) === agendamentoAno && Number(mes) === agendamentoMes;
+      });
       if (items.length === 0) {
         return (
           <div className="flex flex-col items-center justify-center py-16 text-muted-foreground/50">
@@ -1192,7 +1229,7 @@ function App() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {items.map((item, i) => (
+            {items.map((item) => (
               <TableRow key={item.id} className="border-b border-border/20 hover:bg-muted/20 transition-colors group">
                 <TableCell className="py-3.5 pl-5">
                   <span className="font-medium">{"nome" in item ? item.nome : (item as Professor | Aluno).usuario.nome}</span>
@@ -1248,8 +1285,6 @@ function App() {
       );
     }
 
-    const fmtValor = (v: number) => v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
-
     return (
       <div className="space-y-6">
         <div className="flex items-center justify-between border-b border-border/40 pb-4">
@@ -1272,30 +1307,18 @@ function App() {
                 <Label className="text-xs text-muted-foreground font-medium">Até</Label>
                 <Input type="date" value={filtroDataFim} onChange={e => setFiltroDataFim(e.target.value)} className="h-9 w-40 text-sm" />
               </div>
-              <div className="flex items-center gap-1 pb-0.5 ml-1">
-                {["Este mês", "30 dias", "3 meses", "1 ano"].map(label => (
-                  <Button key={label} variant="ghost" size="sm" className="h-8 text-xs px-3 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-all" onClick={() => {
-                    const d = new Date();
-                    if (label === "Este mês") { d.setDate(1); }
-                    else if (label === "30 dias") d.setMonth(d.getMonth() - 1);
-                    else if (label === "3 meses") d.setMonth(d.getMonth() - 3);
-                    else d.setFullYear(d.getFullYear() - 1);
-                    setFiltroDataInicio(d.toISOString().slice(0, 10));
-                    setFiltroDataFim(new Date().toISOString().slice(0, 10));
-                  }}>{label}</Button>
-                ))}
-              </div>
+
             </div>
           </CardContent>
         </Card>
 
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
           {[
-            { label: "Valor Bruto", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign, subtitle: "Faturamento total" },
-            { label: "Líquido (Escola)", value: fmtValor(ganhos.resumo.totalLiquidoEscola), icon: TrendingUp, subtitle: "30% de comissão" },
-            { label: "Professores", value: fmtValor(ganhos.resumo.totalLiquidoProfessor), icon: GraduationCap, subtitle: "70% repassado" },
-            { label: "Aulas", value: ganhos.resumo.totalAulas, icon: CalendarDays, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas", subtitle: "aulas no período" },
-            { label: "Alunos", value: ganhos.resumo.totalAlunosUnicos + ganhos.resumo.totalAlunosMultiProfessor, icon: BookUser, suffix: (ganhos.resumo.totalAlunosUnicos + ganhos.resumo.totalAlunosMultiProfessor) === 1 ? " aluno" : " alunos", subtitle: `${ganhos.resumo.totalAlunosMultiAula} com mais de 1 aula` },
+            { label: "Valor Bruto", value: fmtValor(ganhos.resumo.totalBruto), icon: DollarSign },
+            { label: "Líquido (Escola)", value: fmtValor(ganhos.resumo.totalLiquidoEscola), icon: TrendingUp },
+            { label: "Professores", value: fmtValor(ganhos.resumo.totalLiquidoProfessor), icon: GraduationCap },
+            { label: "Aulas", value: ganhos.resumo.totalAulas, suffix: ganhos.resumo.totalAulas === 1 ? " aula" : " aulas", icon: CalendarDays },
+            { label: "Alunos", value: ganhos.resumo.totalAlunosUnicos + ganhos.resumo.totalAlunosMultiProfessor, suffix: (ganhos.resumo.totalAlunosUnicos + ganhos.resumo.totalAlunosMultiProfessor) === 1 ? " aluno" : " alunos", icon: BookUser },
           ].map(card => (
             <Card key={card.label} className="shadow-sm border-border/60 overflow-hidden">
               <div className="h-0.5 bg-gradient-to-r from-muted-foreground/10 via-muted-foreground/30 to-muted-foreground/10" />
@@ -1307,7 +1330,7 @@ function App() {
               </CardHeader>
               <CardContent className="px-4 pb-4">
                 <p className="text-2xl font-bold tracking-tight">{card.value}</p>
-                <p className="text-xs text-muted-foreground/60 mt-0.5">{card.subtitle ?? ""}{card.suffix ?? ""}</p>
+                <p className="text-xs text-muted-foreground/60 mt-0.5">{card.suffix ?? ""}</p>
               </CardContent>
             </Card>
           ))}
@@ -1529,6 +1552,41 @@ function App() {
     );
   };
 
+  const navegarMesAgendamento = (direcao: number) => {
+    let mes = agendamentoMes + direcao;
+    let ano = agendamentoAno;
+    if (mes < 1) { mes = 12; ano--; }
+    if (mes > 12) { mes = 1; ano++; }
+    setAgendamentoMes(mes);
+    setAgendamentoAno(ano);
+  };
+
+  const mesNavegacaoAgendamento = () => {
+    const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+    const nomeMes = meses[agendamentoMes - 1];
+    return (
+      <Card className="border-border/60 shadow-sm">
+        <div className="h-0.5 bg-gradient-to-r from-violet-200/60 via-violet-400/40 to-violet-200/60" />
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMesAgendamento(-1)}>
+              <span className="text-lg leading-none">‹</span>
+              <span className="text-sm">Anterior</span>
+            </Button>
+            <div className="text-center">
+              <span className="text-base font-semibold">{nomeMes} {agendamentoAno}</span>
+              <span className="text-xs text-muted-foreground/50 block">Mês dos agendamentos</span>
+            </div>
+            <Button variant="ghost" size="sm" className="h-8 gap-1 text-muted-foreground hover:text-foreground" onClick={() => navegarMesAgendamento(1)}>
+              <span className="text-sm">Próximo</span>
+              <span className="text-lg leading-none">›</span>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
+
   const renderRecebimentos = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
@@ -1542,7 +1600,13 @@ function App() {
   const renderPagamento = () => (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold tracking-tight">Pagamento de Professores</h1>
+        <div className="flex items-center gap-3">
+          <Button variant="ghost" size="sm" className="gap-1 text-muted-foreground hover:text-foreground shrink-0" onClick={() => setSection("agendamentos")}>
+            <span className="text-lg leading-none">‹</span>
+            <span>Voltar</span>
+          </Button>
+          <h1 className="text-2xl font-bold tracking-tight">Pagamento de Professores</h1>
+        </div>
       </div>
       {mesNavegacao("Mês de referência")}
       <div className="flex justify-end">
@@ -1565,7 +1629,6 @@ function App() {
       );
     }
 
-    const formatDate = (d: string) => new Date(d).toLocaleDateString("pt-BR");
     const mesRef = String(pagamentoMes).padStart(2, "0");
     const anoRef = pagamentoAno;
 
@@ -1688,11 +1751,6 @@ function App() {
                         <TableCell className="py-3">
                           <span className="text-sm font-medium">{a.usuario.nome}</span>
                           {a.redeSocial && <span className="text-[10px] text-muted-foreground/50 block">{a.redeSocial}</span>}
-                          <span className="text-[10px] text-muted-foreground/60 block">
-                            {a.dataInicioContrato ? `Início: ${formatDate(a.dataInicioContrato)}` : ""}
-                            {a.dataInicioContrato && a.dataFimContrato ? " • " : ""}
-                            {a.dataFimContrato ? `Fim: ${formatDate(a.dataFimContrato)}` : ""}
-                          </span>
                         </TableCell>
                         <TableCell className="py-3 text-center">
                           <span className="text-sm font-mono tabular-nums">{String(a.diaPagamento).padStart(2, "0")}/{mesRef}/{anoRef}</span>
@@ -1806,7 +1864,7 @@ function App() {
                 <div className="ml-auto flex items-center gap-2">
                   <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={async () => {
                     try {
-                      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/relatorio?mes=${pagamentoMes}&ano=${pagamentoAno}`);
+                      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/relatorio?mes=${pagamentoMes}&ano=${pagamentoAno}&professorId=${prof.id}`);
                       if (!res.ok) return;
                       const html = await res.text();
                       const blob = new Blob([html], { type: "text/html" });
@@ -1818,7 +1876,7 @@ function App() {
                   </Button>
                   <Button size="sm" variant="ghost" className="h-7 text-xs gap-1 text-muted-foreground hover:text-foreground" onClick={async () => {
                     try {
-                      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/relatorio?mes=${pagamentoMes}&ano=${pagamentoAno}&print=true`);
+                      const res = await apiFetch(`${backendUrl}/api/pagamentos-professor/relatorio?mes=${pagamentoMes}&ano=${pagamentoAno}&professorId=${prof.id}&print=true`);
                       if (!res.ok) return;
                       const html = await res.text();
                       const blob = new Blob([html], { type: "text/html" });
@@ -2067,6 +2125,8 @@ function App() {
 
   if (!user) {
     if (location.pathname !== "/login") {
+      window.history.replaceState(null, "", "/login");
+    } else if (location.hash) {
       window.history.replaceState(null, "", "/login");
     }
     return (
@@ -2513,6 +2573,7 @@ function App() {
                       onChange={e => setSearchQuery(e.target.value)}
                     />
                   </div>
+                  {section === "agendamentos" && mesNavegacaoAgendamento()}
                   <Card className="border-border/60 shadow-sm overflow-hidden">
                     <CardContent className="p-0">
                       {renderTable()}
@@ -3027,14 +3088,14 @@ function App() {
       </Dialog>
 
       <Dialog open={relatorioGeralOpen} onOpenChange={setRelatorioGeralOpen}>
-        <DialogContent className="sm:max-w-3xl max-h-[80vh] flex flex-col">
-          <DialogHeader>
-            <DialogTitle>Relatório Geral - {mesAno}/${ano}</DialogTitle>
+        <DialogContent className="sm:max-w-3xl max-h-[90vh] flex flex-col gap-0 p-0">
+          <DialogHeader className="px-6 pt-6 pb-0 shrink-0">
+            <DialogTitle>Relatório Geral - {pagamentoMes}/{pagamentoAno}</DialogTitle>
             <DialogDescription>
               Resumo de pagamentos dos professores para o mês de referência.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex-1 overflow-auto">
+          <div ref={relatorioPrintRef} className="flex-1 overflow-auto px-6 py-4">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -3066,13 +3127,16 @@ function App() {
               </TableBody>
             </Table>
             {pagamentoProfData?.professores?.length ? (
-              <div className="border-t px-6 py-4 flex justify-between text-sm font-medium">
+              <div className="border-t pt-4 mt-4 flex justify-between text-sm font-medium">
                 <span>Total</span>
                 <span>{fmtValor(pagamentoProfData.professores.reduce((s, p) => s + p.valorReceber, 0))}</span>
               </div>
             ) : null}
           </div>
-          <DialogFooter>
+          <DialogFooter className="px-6 pb-6 pt-4 shrink-0 border-t border-border/40">
+            <Button variant="outline" onClick={handlePrintRelatorio} className="gap-1.5">
+              <FileText className="size-3.5" /> Imprimir / PDF
+            </Button>
             <Button variant="outline" onClick={() => setRelatorioGeralOpen(false)}>Fechar</Button>
           </DialogFooter>
         </DialogContent>

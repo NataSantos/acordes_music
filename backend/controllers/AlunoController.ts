@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { PrismaClient } from "../generated/client.js";
+import { Prisma, type PrismaClient } from "../generated/client.js";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireAdmin, requireAdminOrProfessor } from "../middleware/roles.js";
@@ -98,8 +98,8 @@ export default function AlunoController(prisma: PrismaClient): Router {
           ...(data.matricula !== undefined && { matricula: data.matricula }),
           ...(data.redeSocial !== undefined && { redeSocial: data.redeSocial }),
           ...(data.diaPagamento !== undefined && { diaPagamento: Number(data.diaPagamento) }),
-          ...(data.dataInicioContrato !== undefined && { dataInicioContrato: new Date(data.dataInicioContrato) }),
-          ...(data.dataFimContrato !== undefined && { dataFimContrato: new Date(data.dataFimContrato) }),
+          ...(data.dataInicioContrato !== undefined && { dataInicioContrato: data.dataInicioContrato ? new Date(data.dataInicioContrato) : null }),
+          ...(data.dataFimContrato !== undefined && { dataFimContrato: data.dataFimContrato ? new Date(data.dataFimContrato) : null }),
           usuario: {
             update: {
               ...(data.cpf !== undefined && { cpf: data.cpf }),
@@ -130,14 +130,20 @@ export default function AlunoController(prisma: PrismaClient): Router {
       });
       if (!aluno) return res.status(404).json(notFound());
 
-      await prisma.agendamento.deleteMany({ where: { alunoId: id } });
-      await prisma.aluno.delete({ where: { id } });
-      await prisma.usuario.delete({ where: { id: aluno.usuarioId } });
+      await prisma.$transaction([
+        prisma.pagamento.deleteMany({ where: { alunoId: id } }),
+        prisma.agendamento.deleteMany({ where: { alunoId: id } }),
+        prisma.aluno.delete({ where: { id } }),
+        prisma.usuario.delete({ where: { id: aluno.usuarioId } }),
+      ]);
 
       return res.status(204).send();
     } catch (error) {
       console.error("Erro ao remover aluno:", error);
-      return res.status(404).json(notFound());
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return res.status(404).json(notFound());
+      }
+      return res.status(500).json({ error: "Erro ao excluir aluno" });
     }
   });
 

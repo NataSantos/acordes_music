@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { PrismaClient } from "../generated/client.js";
+import { Prisma, type PrismaClient } from "../generated/client.js";
 import bcrypt from "bcryptjs";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/roles.js";
@@ -127,14 +127,20 @@ export default function ProfessorController(prisma: PrismaClient): Router {
       });
       if (!professor) return res.status(404).json(notFound());
 
-      await prisma.agendamento.deleteMany({ where: { professorId: id } });
-      await prisma.professor.delete({ where: { id } });
-      await prisma.usuario.delete({ where: { id: professor.usuarioId } });
+      await prisma.$transaction([
+        prisma.pagamentoProfessor.deleteMany({ where: { professorId: id } }),
+        prisma.agendamento.deleteMany({ where: { professorId: id } }),
+        prisma.professor.delete({ where: { id } }),
+        prisma.usuario.delete({ where: { id: professor.usuarioId } }),
+      ]);
 
       return res.status(204).send();
     } catch (error) {
       console.error("Erro ao remover professor:", error);
-      return res.status(404).json(notFound());
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return res.status(404).json(notFound());
+      }
+      return res.status(500).json({ error: "Erro ao excluir professor" });
     }
   });
 

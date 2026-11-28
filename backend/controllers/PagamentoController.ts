@@ -105,8 +105,16 @@ export default function PagamentoController(prisma: PrismaClient): Router {
         };
       });
 
-      const alunosComAula = data.filter(a => a.temAgendamento && !a.dataFimContrato);
-      const alunosContratoEncerrado = data.filter(a => a.dataFimContrato);
+      const alunosComAula = data.filter(a => {
+        if (!a.temAgendamento) return false;
+        if (a.dataInicioContrato && new Date(a.dataInicioContrato) > ultimoDia) return false;
+        if (a.dataFimContrato && new Date(a.dataFimContrato) < primeiroDia) return false;
+        return true;
+      });
+      const alunosContratoEncerrado = data.filter(a => {
+        if (!a.dataFimContrato) return false;
+        return new Date(a.dataFimContrato) < primeiroDia;
+      });
 
       return res.json({ mes, ano, alunosComAula, alunosContratoEncerrado });
     } catch (error) {

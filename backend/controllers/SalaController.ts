@@ -1,5 +1,5 @@
 import { Router } from "express";
-import type { PrismaClient } from "../generated/client.js";
+import { Prisma, type PrismaClient } from "../generated/client.js";
 import { authMiddleware } from "../middleware/auth.js";
 import { requireAdmin } from "../middleware/roles.js";
 import { salaSchema, extrairPrimeiroErro } from "../utils/validation.js";
@@ -79,7 +79,10 @@ export default function SalaController(prisma: PrismaClient): Router {
       return res.status(204).send();
     } catch (error) {
       console.error("Erro ao remover sala:", error);
-      return res.status(404).json(notFound());
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
+        return res.status(404).json(notFound());
+      }
+      return res.status(500).json({ error: "Erro ao excluir sala" });
     }
   });
 

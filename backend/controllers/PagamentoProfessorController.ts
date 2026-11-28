@@ -35,7 +35,6 @@ const r2 = (() => {
   };
 })();
 
-const VALOR_MENSAL = 240;
 const TAXA_ESCOLA = 0.3;
 
 export default function PagamentoProfessorController(prisma: PrismaClient): Router {
@@ -68,16 +67,15 @@ export default function PagamentoProfessorController(prisma: PrismaClient): Rout
       });
 
       const data = professores.map(p => {
-        const aulas = p.agendamentos;
+        const aulas = p.agendamentos.filter(a => (a.valor ?? 0) > 0);
         const totalAulas = aulas.length;
-        const totalHoras = aulas.reduce((s, a) => s + a.duracao, 0);
+        const totalHoras = Math.round((aulas.reduce((s, a) => s + a.duracao, 0) / 60) * 100) / 100;
         const alunosUnicos = new Set(aulas.map(a => a.alunoId)).size;
-        const alunoMeses = aulas.reduce((acc, a) => {
-          const chave = `${a.alunoId}-${mes}`;
-          acc.add(chave);
-          return acc;
-        }, new Set<string>()).size;
-        const valorBruto = alunoMeses * VALOR_MENSAL;
+        const alunoValor = new Map<string, number>();
+        for (const a of aulas) {
+          if (!alunoValor.has(a.alunoId)) alunoValor.set(a.alunoId, a.valor ?? 0);
+        }
+        const valorBruto = Array.from(alunoValor.values()).reduce((s, v) => s + v, 0);
         const valorReceber = Math.round(valorBruto * (1 - TAXA_ESCOLA) * 100) / 100;
 
         const pagamentoProf = p.pagamentosProfessor.find(pp => pp.mes === mes && pp.ano === ano) ?? null;
@@ -120,7 +118,7 @@ export default function PagamentoProfessorController(prisma: PrismaClient): Rout
         };
       });
 
-      return res.json({ mes, ano, professores: data });
+      return res.json({ mes, ano, professores: data.filter(p => p.totalAulas > 0) });
     } catch (error) {
       console.error("Erro ao consultar pagamentos de professores:", error);
       return res.status(500).json({ error: "Erro ao consultar pagamentos de professores" });
@@ -217,11 +215,14 @@ export default function PagamentoProfessorController(prisma: PrismaClient): Rout
       const now = new Date();
       const mes = Number(req.query.mes) || now.getMonth() + 1;
       const ano = Number(req.query.ano) || now.getFullYear();
+      const professorId = req.query.professorId as string | undefined;
 
       const primeiroDia = new Date(ano, mes - 1, 1);
       const ultimoDia = new Date(ano, mes, 0, 23, 59, 59);
 
+      const where = professorId ? { id: professorId } : {};
       const professores = await prisma.professor.findMany({
+        where,
         include: {
           usuario: true,
           agendamentos: {
@@ -237,64 +238,79 @@ export default function PagamentoProfessorController(prisma: PrismaClient): Rout
       });
 
       const meses = ["Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho", "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro"];
+      const ehIndividual = !!professorId;
+      const titulo = ehIndividual ? "Relatório do Professor" : "Relatório de Pagamentos — Professores";
 
       let html = `<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <title>Relatório de Pagamentos - Professores</title>
+  <title>${titulo}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #1a1a2e; background: #f8f7fc; }
+    body { font-family: 'Segoe UI', Arial, sans-serif; padding: 30px; color: #000; background: #fff; }
     .header { text-align: center; margin-bottom: 28px; }
-    .header h1 { font-size: 24px; color: #1a1a2e; margin-bottom: 4px; }
-    .header .periodo { font-size: 14px; color: #7c3aed; font-weight: 600; }
-    .header .info { font-size: 12px; color: #888; margin-top: 4px; }
+    .header h1 { font-size: 24px; color: #000; margin-bottom: 4px; }
+    .header .periodo { font-size: 14px; color: #333; font-weight: 600; }
+    .header .info { font-size: 12px; color: #666; margin-top: 4px; }
 
-    .professor { background: #fff; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.06); margin-bottom: 28px; padding: 20px; page-break-inside: avoid; }
-    .professor h2 { font-size: 17px; margin-bottom: 12px; border-left: 4px solid #7c3aed; padding-left: 12px; color: #1a1a2e; }
+    .acoes { display: flex; gap: 10px; justify-content: center; margin-bottom: 24px; }
+    .acoes button { padding: 10px 24px; border: 1px solid #999; border-radius: 6px; font-size: 14px; font-weight: 600; cursor: pointer; }
+    .btn-imprimir { background: #000; color: #fff; }
+    .btn-voltar { background: #e0e0e0; color: #000; }
+
+    .professor { background: #fff; border: 1px solid #ccc; border-radius: 8px; margin-bottom: 28px; padding: 20px; page-break-inside: avoid; }
+    .professor h2 { font-size: 17px; margin-bottom: 12px; border-left: 4px solid #000; padding-left: 12px; color: #000; }
 
     .resumo { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 16px; }
-    .resumo-item { background: #f5f3ff; border-radius: 6px; padding: 10px 12px; }
-    .resumo-item .label { font-size: 10px; text-transform: uppercase; color: #7c3aed; font-weight: 700; letter-spacing: 0.5px; }
-    .resumo-item .value { font-size: 16px; font-weight: 700; color: #1a1a2e; margin-top: 2px; }
-    .resumo-item .value.sub { font-size: 13px; color: #666; }
+    .resumo-item { background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; padding: 10px 12px; }
+    .resumo-item .label { font-size: 10px; text-transform: uppercase; color: #555; font-weight: 700; letter-spacing: 0.5px; }
+    .resumo-item .value { font-size: 16px; font-weight: 700; color: #000; margin-top: 2px; }
+    .resumo-item .value.sub { font-size: 13px; color: #555; }
 
     .alunos-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 10px; margin-bottom: 12px; }
-    .aluno-card { border: 1px solid #e8e4f0; border-radius: 6px; overflow: hidden; }
-    .aluno-header { background: #faf9ff; padding: 8px 12px; font-size: 13px; font-weight: 600; color: #1a1a2e; border-bottom: 1px solid #e8e4f0; display: flex; justify-content: space-between; align-items: center; }
-    .aluno-header .aulas-info { font-size: 11px; font-weight: 400; color: #888; }
-    .aluno-valores { display: flex; gap: 12px; padding: 8px 12px; font-size: 12px; background: #fcfbff; }
+    .aluno-card { border: 1px solid #ccc; border-radius: 6px; overflow: hidden; }
+    .aluno-header { background: #f5f5f5; padding: 8px 12px; font-size: 13px; font-weight: 600; color: #000; border-bottom: 1px solid #ccc; display: flex; justify-content: space-between; align-items: center; }
+    .aluno-header .aulas-info { font-size: 11px; font-weight: 400; color: #666; }
+    .aluno-valores { display: flex; gap: 12px; padding: 8px 12px; font-size: 12px; background: #fafafa; }
     .aluno-valores span { flex: 1; }
-    .aluno-valores .valor-destaque { color: #059669; font-weight: 600; }
+    .aluno-valores .valor-destaque { font-weight: 600; }
 
     table { width: 100%; border-collapse: collapse; font-size: 11px; }
-    th { background: #f5f3ff; text-align: left; padding: 5px 8px; font-weight: 600; color: #555; border-bottom: 1px solid #e2e8f0; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
-    td { padding: 4px 8px; border-bottom: 1px solid #f1f5f9; color: #444; }
+    th { background: #f0f0f0; text-align: left; padding: 5px 8px; font-weight: 600; color: #333; border-bottom: 1px solid #ccc; font-size: 10px; text-transform: uppercase; letter-spacing: 0.3px; }
+    td { padding: 4px 8px; border-bottom: 1px solid #e0e0e0; color: #333; }
 
-    .total-geral { background: linear-gradient(135deg, #7c3aed, #6d28d9); color: #fff; border-radius: 8px; padding: 16px 20px; margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+    .total-geral { background: #222; color: #fff; border-radius: 8px; padding: 16px 20px; margin-top: 24px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
     .total-geral .total-item { text-align: center; }
     .total-geral .total-item .label { font-size: 10px; text-transform: uppercase; opacity: 0.8; letter-spacing: 0.5px; }
     .total-geral .total-item .value { font-size: 18px; font-weight: 700; margin-top: 2px; }
 
     .divisao { display: flex; gap: 12px; margin-top: 10px; }
-    .divisao-item { flex: 1; background: #f0fdf4; border-radius: 6px; padding: 10px 12px; text-align: center; }
-    .divisao-item.escola { background: #fef2f2; }
-    .divisao-item .label { font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-    .divisao-item .value { font-size: 15px; font-weight: 700; margin-top: 2px; }
-    .divisao-item .value.prof { color: #059669; }
-    .divisao-item .value.escola { color: #dc2626; }
+    .divisao-item { flex: 1; background: #f5f5f5; border: 1px solid #ddd; border-radius: 6px; padding: 10px 12px; text-align: center; }
+    .divisao-item .label { font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; color: #555; }
+    .divisao-item .value { font-size: 15px; font-weight: 700; margin-top: 2px; color: #000; }
 
-    .footer { margin-top: 24px; font-size: 11px; color: #999; text-align: center; border-top: 1px solid #e2e8f0; padding-top: 12px; }
-    @media print { body { padding: 15px; background: #fff; } .professor { box-shadow: none; border: 1px solid #eee; } .no-print { display: none; } }
+    .footer { margin-top: 24px; font-size: 11px; color: #888; text-align: center; border-top: 1px solid #ccc; padding-top: 12px; }
+    @media print { body { padding: 15px; background: #fff; } .no-print { display: none; } }
   </style>
 </head>
 <body>
+  <div class="acoes no-print">
+    <button class="btn-imprimir" onclick="window.print()">Imprimir</button>
+    <button class="btn-voltar" onclick="window.close()">Voltar</button>
+  </div>
   <div class="header">
-    <h1>Relatório de Pagamentos — Professores</h1>
+    <h1>${titulo}</h1>
     <div class="periodo">${meses[mes - 1]} de ${ano}</div>
     <div class="info">Escola de Música Acordes</div>
   </div>`;
+
+      if (ehIndividual && professores.length === 0) {
+        html += `<p style="text-align:center;color:#555;margin-top:40px;">Professor não encontrado.</p>`;
+        html += `</body></html>`;
+        res.set("Content-Type", "text/html");
+        return res.send(html);
+      }
 
       let totalGeralBruto = 0;
       let totalGeralEscola = 0;
@@ -303,14 +319,22 @@ export default function PagamentoProfessorController(prisma: PrismaClient): Rout
       let totalGeralAlunos = 0;
 
       for (const p of professores) {
-        const aulas = p.agendamentos.filter(a => (a.valor ?? VALOR_MENSAL) !== 0);
-        if (aulas.length === 0) continue;
+        const aulas = p.agendamentos.filter(a => (a.valor ?? 0) > 0);
+        if (aulas.length === 0) {
+          if (ehIndividual) {
+            html += `<p style="text-align:center;color:#888;margin-top:40px;">Nenhuma aula encontrada para este professor no período.</p>`;
+          }
+          continue;
+        }
 
         const totalAulas = aulas.length;
-        const totalHoras = aulas.reduce((s, a) => s + a.duracao, 0);
+        const totalHoras = Math.round((aulas.reduce((s, a) => s + a.duracao, 0) / 60) * 100) / 100;
         const alunosUnicos = new Set(aulas.map(a => a.alunoId)).size;
-        const alunoMeses = new Set(aulas.map(a => `${a.alunoId}-${mes}`)).size;
-        const valorBruto = alunoMeses * VALOR_MENSAL;
+        const alunoValor = new Map<string, number>();
+        for (const a of aulas) {
+          if (!alunoValor.has(a.alunoId)) alunoValor.set(a.alunoId, a.valor ?? 0);
+        }
+        const valorBruto = Array.from(alunoValor.values()).reduce((s, v) => s + v, 0);
         const valorEscola = Math.round(valorBruto * TAXA_ESCOLA * 100) / 100;
         const valorReceber = Math.round(valorBruto * (1 - TAXA_ESCOLA) * 100) / 100;
 
@@ -341,15 +365,15 @@ export default function PagamentoProfessorController(prisma: PrismaClient): Rout
   <div class="alunos-grid">`;
 
         for (const [alunoId, aulasAluno] of aulasPorAluno) {
-          const totalHorasAluno = aulasAluno.reduce((s, a) => s + a.duracao, 0);
+          const totalHorasAluno = Math.round((aulasAluno.reduce((s, a) => s + a.duracao, 0) / 60) * 100) / 100;
           html += `<div class="aluno-card">
       <div class="aluno-header">
         <span>${aulasAluno[0]!.aluno.usuario.nome}</span>
         <span class="aulas-info">${aulasAluno.length} aula${aulasAluno.length !== 1 ? "s" : ""} · ${totalHorasAluno}h</span>
       </div>
       <div class="aluno-valores">
-        <span>Valor mensal: <strong>R$ ${VALOR_MENSAL.toFixed(2)}</strong></span>
-        <span class="valor-destaque">Valor professor (70%): R$ ${(VALOR_MENSAL * 0.7).toFixed(2)}</span>
+        <span>Valor mensal: <strong>R$ ${(aulasAluno[0]?.valor ?? 0).toFixed(2)}</strong></span>
+        <span>${aulasAluno.length} aula${aulasAluno.length !== 1 ? "s" : ""} · ${totalHorasAluno}h</span>
       </div>
       <table>
         <thead><tr><th>Data</th><th>Horário</th><th>Sala</th></tr></thead>

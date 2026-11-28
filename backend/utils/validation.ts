@@ -1,32 +1,31 @@
 import { z } from "zod";
 
-const ptBrErrorMap: z.ZodErrorMap = (issue, ctx) => {
+const ptBrErrorMap: z.ZodErrorMap = (issue) => {
   if (issue.code === "invalid_type") {
-    if (issue.received === "undefined") return { message: "Campo é obrigatório" };
-    if (issue.received === "null") return { message: "Campo não pode ser nulo" };
+    if (issue.input === undefined) return { message: "Campo é obrigatório" };
+    if (issue.input === null) return { message: "Campo não pode ser nulo" };
     if (issue.expected === "string") return { message: "Valor deve ser um texto" };
-    if (issue.expected === "number" || issue.expected === "integer") return { message: "Valor deve ser um número" };
+    if (issue.expected === "number" || issue.expected === "int") return { message: "Valor deve ser um número" };
     return { message: "Tipo inválido" };
   }
-  if (issue.code === "invalid_string") {
-    if (issue.validation === "email") return { message: "Formato de email inválido" };
-    if (issue.validation === "uuid") return { message: "ID inválido" };
+  if (issue.code === "invalid_format") {
+    if (issue.format === "email") return { message: "Formato de email inválido" };
     return { message: "Formato inválido" };
   }
   if (issue.code === "too_small") {
-    if (issue.type === "string") return { message: `Deve ter no mínimo ${issue.minimum} caracteres` };
-    if (issue.type === "number") return { message: `Deve ser no mínimo ${issue.minimum}` };
+    if (issue.origin === "string") return { message: `Deve ter no mínimo ${issue.minimum} caracteres` };
+    if (issue.origin === "number") return { message: `Deve ser no mínimo ${issue.minimum}` };
     return { message: "Valor abaixo do mínimo permitido" };
   }
   if (issue.code === "too_big") {
-    if (issue.type === "string") return { message: `Deve ter no máximo ${issue.maximum} caracteres` };
-    if (issue.type === "number") return { message: `Deve ser no máximo ${issue.maximum}` };
+    if (issue.origin === "string") return { message: `Deve ter no máximo ${issue.maximum} caracteres` };
+    if (issue.origin === "number") return { message: `Deve ser no máximo ${issue.maximum}` };
     return { message: "Valor acima do máximo permitido" };
   }
-  if (issue.code === "invalid_enum_value") {
-    return { message: `Valor inválido. Opções: ${issue.options.join(", ")}` };
+  if (issue.code === "invalid_value") {
+    return { message: `Valor inválido. Opções: ${issue.values.join(", ")}` };
   }
-  return { message: ctx.defaultError };
+  return undefined;
 };
 
 z.setErrorMap(ptBrErrorMap);
